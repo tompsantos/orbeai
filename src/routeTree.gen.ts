@@ -15,6 +15,7 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppProjectsRouteImport } from './routes/app.projects'
 import { Route as AppChatRouteImport } from './routes/app.chat'
 import { Route as AppProjectsIndexRouteImport } from './routes/app.projects.index'
+import { Route as AppProjectsIdRouteImport } from './routes/app.projects.$id'
 
 const AppRoute = AppRouteImport.update({
   id: '/app',
@@ -46,6 +47,11 @@ const AppProjectsIndexRoute = AppProjectsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppProjectsRoute,
 } as any)
+const AppProjectsIdRoute = AppProjectsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppProjectsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,12 +59,14 @@ export interface FileRoutesByFullPath {
   '/app/chat': typeof AppChatRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
   '/app/': typeof AppIndexRoute
+  '/app/projects/$id': typeof AppProjectsIdRoute
   '/app/projects/': typeof AppProjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app/chat': typeof AppChatRoute
   '/app': typeof AppIndexRoute
+  '/app/projects/$id': typeof AppProjectsIdRoute
   '/app/projects': typeof AppProjectsIndexRoute
 }
 export interface FileRoutesById {
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/app/chat': typeof AppChatRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
   '/app/': typeof AppIndexRoute
+  '/app/projects/$id': typeof AppProjectsIdRoute
   '/app/projects/': typeof AppProjectsIndexRoute
 }
 export interface FileRouteTypes {
@@ -78,9 +87,10 @@ export interface FileRouteTypes {
     | '/app/chat'
     | '/app/projects'
     | '/app/'
+    | '/app/projects/$id'
     | '/app/projects/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app/chat' | '/app' | '/app/projects'
+  to: '/' | '/app/chat' | '/app' | '/app/projects/$id' | '/app/projects'
   id:
     | '__root__'
     | '/'
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/app/chat'
     | '/app/projects'
     | '/app/'
+    | '/app/projects/$id'
     | '/app/projects/'
   fileRoutesById: FileRoutesById
 }
@@ -140,14 +151,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProjectsIndexRouteImport
       parentRoute: typeof AppProjectsRoute
     }
+    '/app/projects/$id': {
+      id: '/app/projects/$id'
+      path: '/$id'
+      fullPath: '/app/projects/$id'
+      preLoaderRoute: typeof AppProjectsIdRouteImport
+      parentRoute: typeof AppProjectsRoute
+    }
   }
 }
 
 interface AppProjectsRouteChildren {
+  AppProjectsIdRoute: typeof AppProjectsIdRoute
   AppProjectsIndexRoute: typeof AppProjectsIndexRoute
 }
 
 const AppProjectsRouteChildren: AppProjectsRouteChildren = {
+  AppProjectsIdRoute: AppProjectsIdRoute,
   AppProjectsIndexRoute: AppProjectsIndexRoute,
 }
 
