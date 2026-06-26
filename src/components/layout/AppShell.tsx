@@ -12,7 +12,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
-const NAV = [
+type NavItem = { to: string; label: string; icon: typeof Home; exact?: boolean };
+const NAV: NavItem[] = [
   { to: "/app", label: "Cockpit", icon: Home, exact: true },
   { to: "/app/chat", label: "Chat", icon: MessageSquare },
   { to: "/app/projects", label: "Projetos", icon: Folders },
@@ -25,7 +26,7 @@ const NAV = [
   { to: "/app/orbeone", label: "Ecossistema", icon: Compass },
   { to: "/app/admin", label: "Admin", icon: ShieldCheck },
   { to: "/app/settings", label: "Ajustes", icon: Settings },
-] as const;
+];
 
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
