@@ -94,13 +94,15 @@
   --sidebar-accent: oklch(0.95 0.015 250);
 
   --gradient-orbe: linear-gradient(135deg, oklch(0.58 0.18 256) 0%, oklch(0.78 0.13 230) 60%, oklch(0.93 0.008 250) 100%);
-  --gradient-hero: radial-gradient(1200px 600px at 20% 0%, color-mix(in oklch, oklch(0.58 0.18 256) 22%, transparent), transparent 60%),
-                   radial-gradient(900px 500px at 90% 10%, color-mix(in oklch, oklch(0.78 0.13 230) 22%, transparent), transparent 55%);
-  --gradient-card: linear-gradient(180deg, color-mix(in oklch, white 80%, transparent), color-mix(in oklch, white 55%, transparent));
-  --glow-orbe: 0 0 0 1px color-mix(in oklch, var(--orbe-blue) 18%, transparent),
-               0 18px 60px -22px color-mix(in oklch, var(--orbe-blue) 45%, transparent);
+  --gradient-hero: radial-gradient(1200px 600px at 18% -5%, color-mix(in oklch, oklch(0.58 0.18 256) 16%, transparent), transparent 60%),
+                   radial-gradient(900px 520px at 95% 5%, color-mix(in oklch, oklch(0.78 0.13 230) 14%, transparent), transparent 55%);
+  --gradient-card: linear-gradient(180deg, color-mix(in oklch, white 82%, transparent), color-mix(in oklch, white 52%, transparent));
+  --glow-orbe: 0 0 0 1px color-mix(in oklch, var(--orbe-blue) 16%, transparent),
+               0 14px 48px -20px color-mix(in oklch, var(--orbe-blue) 40%, transparent);
   --shadow-elegant: 0 1px 2px rgba(15,23,42,0.04), 0 10px 30px -12px rgba(15,23,42,0.10);
-  --shadow-soft: 0 1px 2px rgba(15,23,42,0.04), 0 4px 14px -6px rgba(15,23,42,0.08);
+  --shadow-soft: 0 1px 2px rgba(15,23,42,0.03), 0 3px 12px -6px rgba(15,23,42,0.07);
+  --shadow-xs: 0 1px 2px rgba(15,23,42,0.04);
+  --shadow-pop: 0 1px 2px rgba(15,23,42,0.05), 0 24px 60px -24px rgba(15,23,42,0.22);
 }
 
 .dark {
@@ -144,6 +146,11 @@
   --gradient-hero: radial-gradient(1200px 600px at 20% 0%, color-mix(in oklch, oklch(0.7 0.16 245) 28%, transparent), transparent 60%),
                    radial-gradient(900px 500px at 90% 10%, color-mix(in oklch, oklch(0.78 0.13 230) 22%, transparent), transparent 55%);
   --shadow-elegant: 0 1px 2px rgba(0,0,0,0.5), 0 14px 40px -14px rgba(0,0,0,0.6);
+  --shadow-soft: 0 1px 2px rgba(0,0,0,0.4), 0 4px 16px -8px rgba(0,0,0,0.5);
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-pop: 0 1px 2px rgba(0,0,0,0.5), 0 28px 70px -28px rgba(0,0,0,0.75);
+  --glow-orbe: 0 0 0 1px color-mix(in oklch, var(--orbe-blue) 22%, transparent),
+               0 14px 48px -20px color-mix(in oklch, var(--orbe-blue) 50%, transparent);
 }
 
 @layer base {
@@ -153,6 +160,7 @@
   html, body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   body {
     background-color: var(--color-background);
@@ -163,6 +171,26 @@
   h1, h2, h3, h4 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
+  }
+  /* Premium thin scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--foreground) 18%, transparent) transparent;
+  }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background: color-mix(in oklch, var(--foreground) 16%, transparent);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklch, var(--foreground) 28%, transparent);
+    background-clip: padding-box;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--orbe-blue) 24%, transparent);
   }
 }
 
@@ -175,7 +203,8 @@
 
 @utility orbe-glass {
   background: var(--gradient-card);
-  backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid color-mix(in oklch, var(--border) 80%, transparent);
   box-shadow: var(--shadow-soft);
 }
@@ -194,15 +223,45 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
-  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  transition: transform .25s cubic-bezier(0.16,1,0.3,1), box-shadow .25s ease, border-color .25s ease;
 }
 
 @utility orbe-card-hover {
   &:hover {
     transform: translateY(-2px);
-    border-color: color-mix(in oklch, var(--orbe-blue) 35%, var(--border));
+    border-color: color-mix(in oklch, var(--orbe-blue) 32%, var(--border));
     box-shadow: var(--shadow-elegant);
   }
+}
+
+/* Subtle surface — flatter than a card, for nested panels / list rows */
+@utility orbe-surface {
+  background: color-mix(in oklch, var(--card) 70%, transparent);
+  border: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+  border-radius: var(--radius-md);
+}
+
+/* Tinted accent stripe used on selected items */
+@utility orbe-active {
+  position: relative;
+  background: color-mix(in oklch, var(--orbe-blue) 9%, var(--card));
+  border-color: color-mix(in oklch, var(--orbe-blue) 28%, var(--border));
+}
+
+/* Section eyebrow caps */
+@utility orbe-eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+/* Gradient hairline divider */
+@utility orbe-hairline {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--border) 90%, transparent) 18%, color-mix(in oklch, var(--border) 90%, transparent) 82%, transparent);
 }
 
 @keyframes orbe-pulse {
@@ -218,4 +277,21 @@
 }
 @utility animate-orbe-pulse {
   animation: orbe-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes orbe-shimmer {
+  100% { transform: translateX(100%); }
+}
+@utility orbe-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in oklch, var(--muted) 80%, transparent);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--foreground) 6%, transparent), transparent);
+    animation: orbe-shimmer 1.6s infinite;
+  }
 }

@@ -16,15 +16,24 @@ import { CompareModelsDialog } from "@/components/chat/CompareModelsDialog";
 import type { Artifact, Attachment, Chat, ChatMode, MemoryItem, Message, ModelKey, Project } from "@/types";
 import type { RouterDecision } from "@/lib/ai/router";
 import {
-  ArrowUp, Image as ImageIcon, Mic, Paperclip, Pin,
+  ArrowUp, Image as ImageIcon, MessageSquare, Mic, Paperclip, Pin,
   Search, Sparkles, Square, X,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/chat")({
   head: () => ({ meta: [{ title: "Chat · orbeAI" }] }),
   component: ChatPage,
 });
+
+const SUGGESTIONS: { icon: typeof Sparkles; title: string; prompt: string }[] = [
+  { icon: Sparkles, title: "Resumir estratégia", prompt: "Resuma a estratégia do projeto em 5 pontos acionáveis." },
+  { icon: Search, title: "Investigar tema", prompt: "Faça uma pesquisa profunda sobre tendências de IA aplicada." },
+  { icon: Pin, title: "Plano de execução", prompt: "Crie um plano de execução com marcos e responsáveis." },
+  { icon: MessageSquare, title: "Rascunhar documento", prompt: "Rascunhe um documento executivo a partir do contexto atual." },
+];
 
 const MODES: ChatMode[] = ["padrão", "strategist", "dev", "research", "document", "creative", "ops", "mentor", "safe"];
 const MODELS: { key: ModelKey; label: string }[] = [
@@ -180,63 +189,108 @@ function ChatPage() {
       <div className="grid grid-cols-1 md:grid-cols-[260px_minmax(0,1fr)] gap-4 min-h-[620px] md:h-[calc(100vh-8rem)]">
         {/* Conversation list */}
         <aside className="orbe-card p-3 hidden md:flex flex-col min-h-0">
-          <div className="flex items-center justify-between mb-3 px-2">
-            <div className="text-sm font-semibold">Conversas</div>
-            <Button size="sm" variant="ghost" onClick={newChat}><Sparkles className="size-3.5 mr-1" /> Nova</Button>
+          <div className="flex items-center justify-between mb-3 px-1">
+            <div>
+              <div className="text-sm font-semibold leading-tight">Conversas</div>
+              <div className="text-[11px] text-muted-foreground">{chats.length} no workspace</div>
+            </div>
+            <Button size="sm" onClick={newChat} className="h-8"><Sparkles className="size-3.5 mr-1" /> Nova</Button>
           </div>
-          <div className="relative px-2 mb-2">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar…"
-              className="w-full bg-muted/40 rounded-md pl-7 pr-2 py-1.5 text-sm outline-none focus:orbe-ring" />
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar conversas…"
+              className="w-full bg-muted/50 border border-transparent rounded-lg pl-8 pr-3 py-2 text-sm outline-none transition-colors focus:bg-card focus:border-[color-mix(in_oklch,var(--orbe-blue)_30%,transparent)]" />
           </div>
           <ScrollArea className="flex-1 -mx-1 px-1">
             <ul className="space-y-1">
-              {filteredChats.map((c) => (
+              {filteredChats.map((c) => {
+                const active = activeChatId === c.id;
+                return (
                 <li key={c.id}>
                   <button onClick={() => setActiveChatId(c.id)}
-                    className={cn("w-full text-left rounded-md px-3 py-2 text-sm hover:bg-accent/60 transition-colors",
-                      activeChatId === c.id && "bg-accent/70 orbe-glow")}>
+                    className={cn("group w-full text-left rounded-lg px-2.5 py-2 transition-colors border",
+                      active
+                        ? "orbe-active"
+                        : "border-transparent hover:bg-[var(--sidebar-accent)]")}>
                     <div className="flex items-center gap-2">
-                      {c.pinned && <Pin className="size-3 text-[var(--orbe-blue)]" />}
-                      <span className="truncate">{c.title}</span>
+                      {c.pinned
+                        ? <Pin className="size-3 shrink-0 text-[var(--orbe-blue)] fill-[var(--orbe-blue)]" />
+                        : <MessageSquare className={cn("size-3 shrink-0", active ? "text-[var(--orbe-blue)]" : "text-muted-foreground")} />}
+                      <span className={cn("truncate text-sm", active ? "font-medium" : "")}>{c.title}</span>
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">orbe {c.mode}</div>
+                    <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5 pl-5">
+                      <span className="truncate">orbe {c.mode}</span>
+                      <span className="text-muted-foreground/40">·</span>
+                      <span className="shrink-0">{formatDistanceToNow(new Date(c.updatedAt), { addSuffix: true, locale: ptBR })}</span>
+                    </div>
                   </button>
                 </li>
-              ))}
+                );
+              })}
+              {filteredChats.length === 0 && (
+                <li className="px-3 py-8 text-center text-xs text-muted-foreground">
+                  Nenhuma conversa encontrada.
+                </li>
+              )}
             </ul>
           </ScrollArea>
         </aside>
 
         {/* Conversation area */}
         <section className="orbe-card flex flex-col min-h-0 overflow-hidden">
-          <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3">
-            <OrbeMark size={22} />
-            <div className="text-sm font-medium truncate max-w-[240px] md:max-w-none">{activeChat?.title ?? "Selecione uma conversa"}</div>
-            <Pill tone="blue">orbe {mode}</Pill>
-            {project && (
-              <Link to="/app/projects/$id" params={{ id: project.id }}>
-                <Pill tone="muted">{project.name}</Pill>
-              </Link>
-            )}
+          <div className="flex flex-wrap items-center gap-3 border-b bg-card/40 px-4 py-3">
+            <div className="flex items-center justify-center size-9 rounded-xl orbe-glass shrink-0">
+              <OrbeMark size={20} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold truncate max-w-[200px] md:max-w-[360px]">{activeChat?.title ?? "Selecione uma conversa"}</div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Pill tone="blue">orbe {mode}</Pill>
+                {project && (
+                  <Link to="/app/projects/$id" params={{ id: project.id }}>
+                    <Pill tone="muted">{project.name}</Pill>
+                  </Link>
+                )}
+              </div>
+            </div>
             <div className="ml-auto flex flex-wrap items-center gap-2">
               <Select value={mode} onValueChange={(v) => setMode(v as ChatMode)}>
-                <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 w-[140px] text-xs bg-card"><SelectValue /></SelectTrigger>
                 <SelectContent>{MODES.map((m) => <SelectItem key={m} value={m}>orbe {m}</SelectItem>)}</SelectContent>
               </Select>
               <Select value={model} onValueChange={(v) => setModel(v as ModelKey)}>
-                <SelectTrigger className="h-8 w-[170px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 w-[170px] text-xs bg-card"><SelectValue /></SelectTrigger>
                 <SelectContent>{MODELS.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
 
           {/* Messages */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-6">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-10 py-6 md:py-8 space-y-6">
             {messages.length === 0 && (
-              <div className="text-center text-muted-foreground py-20">
-                <OrbeMark size={32} className="mx-auto" />
-                <p className="mt-3">Comece a conversa. A orbeAI usa o modo selecionado e roteia para o melhor modelo.</p>
+              <div className="h-full flex flex-col items-center justify-center text-center py-12 animate-orbe-fade">
+                <div className="size-16 rounded-2xl orbe-glass flex items-center justify-center">
+                  <OrbeMark size={36} />
+                </div>
+                <h3 className="mt-5 text-xl font-semibold tracking-tight">Como posso ajudar hoje?</h3>
+                <p className="mt-2 text-sm text-muted-foreground max-w-md text-pretty">
+                  A orbeAI usa o modo <span className="font-medium text-foreground">orbe {mode}</span> e roteia automaticamente para o melhor modelo.
+                </p>
+                <div className="mt-6 grid sm:grid-cols-2 gap-2 w-full max-w-lg">
+                  {SUGGESTIONS.map((s) => (
+                    <button
+                      key={s.title}
+                      onClick={() => setInput(s.prompt)}
+                      className="orbe-card orbe-card-hover p-3 text-left flex items-start gap-2.5"
+                    >
+                      <s.icon className="size-4 text-[var(--orbe-blue)] mt-0.5 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium">{s.title}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-1">{s.prompt}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((m) => (
@@ -252,9 +306,13 @@ function ChatPage() {
             ))}
             {streaming && (
               <div className="flex items-start gap-3 animate-orbe-fade">
-                <OrbeMark size={28} className="mt-1" />
-                <div className="orbe-glass rounded-2xl px-4 py-3 text-sm text-muted-foreground inline-flex items-center gap-2">
-                  <span className="size-1.5 rounded-full bg-[var(--orbe-blue)] animate-orbe-pulse" />
+                <OrbeMark size={28} className="mt-1 animate-orbe-pulse" />
+                <div className="orbe-glass rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-muted-foreground inline-flex items-center gap-2">
+                  <span className="flex gap-1">
+                    <span className="size-1.5 rounded-full bg-[var(--orbe-blue)] animate-orbe-pulse" />
+                    <span className="size-1.5 rounded-full bg-[var(--orbe-blue)] animate-orbe-pulse [animation-delay:200ms]" />
+                    <span className="size-1.5 rounded-full bg-[var(--orbe-blue)] animate-orbe-pulse [animation-delay:400ms]" />
+                  </span>
                   <span>orbeAI está pensando…</span>
                 </div>
               </div>
@@ -262,42 +320,50 @@ function ChatPage() {
           </div>
 
           {/* Composer */}
-          <div className="border-t p-3 md:p-4">
+          <div className="border-t bg-card/40 p-3 md:p-4">
             {pendingAttachment && (
-              <div className="mb-2 inline-flex items-center gap-2 text-xs bg-muted/40 rounded-full px-3 py-1.5">
-                <Paperclip className="size-3" /> {pendingAttachment.name}
-                <button onClick={() => setPendingAttachment(null)} className="text-muted-foreground hover:text-foreground">
+              <div className="mb-2 inline-flex items-center gap-2 text-xs bg-muted/60 border border-border/60 rounded-full pl-3 pr-2 py-1.5">
+                <Paperclip className="size-3 text-[var(--orbe-blue)]" /> {pendingAttachment.name}
+                <button onClick={() => setPendingAttachment(null)} className="rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted" aria-label="Remover anexo">
                   <X className="size-3" />
                 </button>
               </div>
             )}
-            <div className="orbe-glass rounded-2xl p-2 flex items-end gap-2">
-              <Button variant="ghost" size="icon" title="Anexar" onClick={addAttachment}><Paperclip className="size-4" /></Button>
-              <Button variant="ghost" size="icon" title="Imagem" onClick={() => toast("Multimodal disponível ao plugar provider real")}><ImageIcon className="size-4" /></Button>
-              <Button variant="ghost" size="icon" title="Voz" onClick={() => toast("Voz disponível ao plugar provider real")}><Mic className="size-4" /></Button>
+            <div className="orbe-glass rounded-2xl p-2 flex items-end gap-1.5 transition-shadow focus-within:shadow-[var(--glow-orbe)] focus-within:border-[color-mix(in_oklch,var(--orbe-blue)_40%,transparent)]">
+              <div className="flex items-center gap-0.5 pb-0.5">
+                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-foreground" title="Anexar" onClick={addAttachment}><Paperclip className="size-4" /></Button>
+                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-foreground" title="Imagem" onClick={() => toast("Multimodal disponível ao plugar provider real")}><ImageIcon className="size-4" /></Button>
+                <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-foreground" title="Voz" onClick={() => toast("Voz disponível ao plugar provider real")}><Mic className="size-4" /></Button>
+              </div>
               <Textarea value={input} onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
                 placeholder="Converse com a orbeAI…"
-                className="flex-1 border-0 bg-transparent resize-none min-h-[44px] max-h-40 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                disabled={!activeChatId}
+                className="flex-1 border-0 bg-transparent resize-none min-h-[44px] max-h-40 px-1 py-2.5 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/70" />
               {streaming ? (
-                <Button size="icon" variant="outline" onClick={() => setStreaming(false)} title="Parar"><Square className="size-4" /></Button>
+                <Button size="icon" variant="outline" className="size-9 shrink-0" onClick={() => setStreaming(false)} title="Parar"><Square className="size-4" /></Button>
               ) : (
-                <Button size="icon" onClick={send} disabled={!input.trim() || !activeChatId} title="Enviar"><ArrowUp className="size-4" /></Button>
+                <Button size="icon" className="size-9 shrink-0 rounded-xl" onClick={send} disabled={!input.trim() || !activeChatId} title="Enviar"><ArrowUp className="size-4" /></Button>
               )}
             </div>
-            <div className="mt-2 text-[11px] text-muted-foreground px-2">
-              Enter envia · Shift+Enter quebra linha · respostas geradas pelo provedor mock até conectar APIs reais
+            <div className="mt-2 text-[11px] text-muted-foreground px-2 flex items-center gap-1.5">
+              <kbd className="rounded border border-border/70 bg-muted/60 px-1 py-0.5 text-[10px] font-medium">Enter</kbd> envia
+              <span className="text-muted-foreground/40">·</span>
+              <kbd className="rounded border border-border/70 bg-muted/60 px-1 py-0.5 text-[10px] font-medium">Shift+Enter</kbd> nova linha
+              <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+              <span className="hidden sm:inline">provedor mock até conectar APIs reais</span>
             </div>
           </div>
         </section>
       </div>
 
       {/* Context cards below chat */}
-      <section className="space-y-3 pb-4">
-        <div className="flex items-center justify-between">
+      <section className="space-y-4 pb-4">
+        <div className="orbe-hairline" />
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">contexto da conversa</div>
-            <div className="text-sm text-muted-foreground">decisão do router, memórias, artifacts e ações relacionadas ficam aqui, sem apertar o chat.</div>
+            <div className="orbe-eyebrow">contexto da conversa</div>
+            <div className="text-sm text-muted-foreground mt-1.5 max-w-2xl text-pretty">Decisão do router, memórias, artifacts e ações relacionadas — sem apertar o chat.</div>
           </div>
         </div>
         <ChatContextPanel chat={activeChat} decision={lastDecision}
@@ -334,8 +400,8 @@ function Bubble({
         )}
         <div className={cn("rounded-2xl px-4 py-3 text-sm leading-relaxed",
           isUser
-            ? "bg-[var(--orbe-blue)] text-white rounded-tr-sm whitespace-pre-wrap"
-            : "rounded-tl-sm")}>
+            ? "bg-[var(--orbe-blue)] text-white rounded-tr-sm whitespace-pre-wrap shadow-[var(--shadow-soft)]"
+            : "rounded-tl-sm bg-card border border-border/70 shadow-[var(--shadow-xs)]")}>
           {isUser ? message.content : <MessageRenderer content={message.content} />}
         </div>
         {message.attachments && message.attachments.length > 0 && (

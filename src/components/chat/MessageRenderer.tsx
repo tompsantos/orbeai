@@ -54,10 +54,17 @@ export function MessageRenderer({ content, className }: { content: string; class
       i++;
       while (i < lines.length && !lines[i].startsWith("```")) { buf.push(lines[i]); i++; }
       blocks.push(
-        <pre key={`code-${blocks.length}`} className="my-2 rounded-lg bg-muted/60 p-3 overflow-x-auto text-xs font-mono">
-          {lang && <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{lang}</div>}
-          <code>{buf.join("\n")}</code>
-        </pre>
+        <div key={`code-${blocks.length}`} className="my-3 rounded-xl border border-border/70 overflow-hidden bg-[color-mix(in_oklch,var(--muted)_60%,var(--card))]">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border/60 bg-muted/40">
+            <span className="size-2 rounded-full bg-destructive/40" />
+            <span className="size-2 rounded-full bg-[var(--warning)]/50" />
+            <span className="size-2 rounded-full bg-[var(--success)]/50" />
+            {lang && <span className="ml-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{lang}</span>}
+          </div>
+          <pre className="p-3.5 overflow-x-auto text-[12.5px] leading-relaxed font-mono">
+            <code>{buf.join("\n")}</code>
+          </pre>
+        </div>
       );
       i++; continue;
     }

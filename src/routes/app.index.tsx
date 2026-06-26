@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { GlassCard, Pill, SectionHeader, StatusDot } from "@/components/design-system/Primitives";
+import { GlassCard, IconBadge, Pill, SectionHeader, StatusDot } from "@/components/design-system/Primitives";
 import {
   Activity, ArrowUpRight, Bot, FileText, FlaskConical, GitBranch, LineChart,
   MessageSquare, Network, Plus, Sparkles, Workflow,
@@ -75,9 +75,10 @@ function Cockpit() {
             { i: FileText, t: "Memória", to: "/app/memory" },
             { i: Network, t: "Comparar modelos", to: "/app/models" },
           ].map(({ i: Icon, t, to }) => (
-            <Link key={t} to={to} className="orbe-card orbe-card-hover p-4 flex flex-col gap-3">
-              <div className="size-9 rounded-lg orbe-glass flex items-center justify-center">
-                <Icon className="size-4 text-[var(--orbe-blue)]" />
+            <Link key={t} to={to} className="group orbe-card orbe-card-hover p-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <IconBadge icon={Icon} size="sm" />
+                <ArrowUpRight className="size-4 text-muted-foreground/0 group-hover:text-muted-foreground transition-colors" />
               </div>
               <span className="text-sm font-medium">{t}</span>
             </Link>
@@ -112,18 +113,21 @@ function Cockpit() {
         <section>
           <SectionHeader eyebrow="conversas recentes" title="Últimos diálogos"
             action={<Button variant="ghost" size="sm" asChild><Link to="/app/chat">Abrir chat</Link></Button>} />
-          <GlassCard className="p-0">
-            <ul className="divide-y">
+          <GlassCard className="p-1.5" hoverable={false}>
+            <ul>
               {chats.slice(0, 6).map((c) => (
-                <li key={c.id} className="p-4 hover:bg-accent/40 transition-colors">
-                  <Link to="/app/chat" className="flex items-start gap-3">
-                    <MessageSquare className="size-4 mt-0.5 text-[var(--orbe-blue)]" />
-                    <div className="min-w-0">
+                <li key={c.id}>
+                  <Link to="/app/chat" className="group flex items-center gap-3 rounded-lg p-2.5 hover:bg-accent/50 transition-colors">
+                    <span className="flex items-center justify-center size-8 rounded-lg bg-[color-mix(in_oklch,var(--orbe-blue)_10%,transparent)] shrink-0">
+                      <MessageSquare className="size-4 text-[var(--orbe-blue)]" />
+                    </span>
+                    <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium truncate">{c.title}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">
                         orbe {c.mode} · {formatDistanceToNow(new Date(c.updatedAt), { addSuffix: true, locale: ptBR })}
                       </div>
                     </div>
+                    <ArrowUpRight className="size-4 text-muted-foreground/0 group-hover:text-muted-foreground transition-colors shrink-0" />
                   </Link>
                 </li>
               ))}
@@ -210,12 +214,13 @@ function Cockpit() {
             </div>
             <LineChart className="size-5 text-[var(--orbe-blue)]" />
           </div>
-          <div className="text-3xl font-semibold">US$ {totalCost.toFixed(2)}</div>
+          <div className="text-3xl font-semibold tracking-tight tabular-nums">US$ {totalCost.toFixed(2)}</div>
           <div className="text-xs text-muted-foreground mt-1">Custo estimado · {usage.length} dias</div>
-          <div className="mt-4 flex gap-1 h-12 items-end">
+          <div className="mt-4 flex gap-1 h-14 items-end">
             {usage.map((u, i) => (
-              <div key={i} className="flex-1 rounded-sm bg-gradient-to-t from-[var(--orbe-blue)] to-[var(--orbe-cyan)] opacity-80"
-                style={{ height: `${Math.min(100, (u.tokens / 600000) * 100)}%` }} />
+              <div key={i} className="flex-1 rounded-md bg-gradient-to-t from-[var(--orbe-blue)] to-[var(--orbe-cyan)] opacity-85 hover:opacity-100 transition-opacity min-h-[3px]"
+                style={{ height: `${Math.min(100, (u.tokens / 600000) * 100)}%` }}
+                title={`${(u.tokens / 1000).toFixed(0)}k tokens`} />
             ))}
           </div>
         </GlassCard>

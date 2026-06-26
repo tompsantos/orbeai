@@ -13,6 +13,7 @@ import { Copy, Download, FileText, History, MessageSquare, Plus, Save, Sparkles,
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/artifacts")({
   head: () => ({ meta: [{ title: "Artifact studio · orbeAI" }] }),
@@ -94,35 +95,38 @@ function ArtifactsPage() {
 
       <div className="grid lg:grid-cols-[260px_1fr] gap-4">
         <aside className="orbe-card p-3 min-h-[50vh]">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground px-2 mb-2">Seus artifacts</div>
+          <div className="orbe-eyebrow px-1 mb-3">Seus artifacts</div>
           {artifacts.length === 0 ? (
             <div className="px-2 py-6 text-xs text-muted-foreground">Nenhum artifact ainda.</div>
           ) : (
             <ul className="space-y-1">
-              {artifacts.map((a) => (
+              {artifacts.map((a) => {
+                const active = activeId === a.id;
+                return (
                 <li key={a.id}>
                   <button onClick={() => { setActiveId(a.id); setContent(a.content); }}
-                    className={`w-full text-left rounded-md px-3 py-2 text-sm hover:bg-accent/50 transition ${activeId === a.id ? "bg-accent/70 orbe-glow" : ""}`}>
-                    <div className="font-medium truncate">{a.title}</div>
-                    <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                      <span>{a.kind}</span>
-                      <span>·</span>
+                    className={cn("w-full text-left rounded-lg px-2.5 py-2 text-sm transition-colors border",
+                      active ? "orbe-active" : "border-transparent hover:bg-[var(--sidebar-accent)]")}>
+                    <div className={cn("truncate", active && "font-medium")}>{a.title}</div>
+                    <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                      <Pill tone={active ? "blue" : "muted"}>{a.kind}</Pill>
                       <span>v{a.versions.length}</span>
                     </div>
                   </button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </aside>
 
         {active ? (
           <section className="grid lg:grid-cols-[1fr_280px] gap-4 min-h-[60vh]">
-            <GlassCard className="flex flex-col">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <div className="text-xs uppercase tracking-widest text-muted-foreground">{active.kind}</div>
-                  <div className="font-semibold">{active.title}</div>
+            <GlassCard className="flex flex-col" hoverable={false}>
+              <div className="flex items-center justify-between mb-3 gap-3">
+                <div className="min-w-0">
+                  <div className="orbe-eyebrow">{active.kind}</div>
+                  <div className="font-semibold truncate mt-1">{active.title}</div>
                 </div>
                 <div className="flex gap-1">
                   <Popover>
@@ -147,16 +151,17 @@ function ArtifactsPage() {
                   <Button size="sm" onClick={onSave}><Save className="size-3.5 mr-1" /> Salvar</Button>
                 </div>
               </div>
-              <Textarea value={content} onChange={(e) => setContent(e.target.value)} className="flex-1 font-mono text-xs min-h-[320px]" />
+              <Textarea value={content} onChange={(e) => setContent(e.target.value)}
+                className="flex-1 font-mono text-[12.5px] leading-relaxed min-h-[320px] bg-muted/30 border-border/60 focus-visible:bg-card resize-none" />
               <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>{active.versions.length} versões</span>
+                <span className="tabular-nums">{content.length} caracteres · {active.versions.length} versões</span>
                 <span className="inline-flex items-center gap-1"><Sparkles className="size-3 text-[var(--orbe-blue)]" /> editável</span>
               </div>
             </GlassCard>
 
             <div className="space-y-4">
-              <GlassCard>
-                <div className="flex items-center gap-2 mb-2">
+              <GlassCard hoverable={false}>
+                <div className="flex items-center gap-2 mb-3">
                   <MessageSquare className="size-4 text-[var(--orbe-blue)]" />
                   <div className="font-semibold text-sm">Instruções para a orbeAI</div>
                 </div>

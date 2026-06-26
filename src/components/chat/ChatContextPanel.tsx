@@ -2,7 +2,7 @@ import { Pill } from "@/components/design-system/Primitives";
 import { Link } from "@tanstack/react-router";
 import type { Artifact, Chat, MemoryItem } from "@/types";
 import type { RouterDecision } from "@/lib/ai/router";
-import { Brain, FileSearch, FolderOpen, Network, Sparkles } from "lucide-react";
+import { Brain, FileSearch, FolderOpen, MessageSquare, Network, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ChatContextPanel({
@@ -26,16 +26,16 @@ export function ChatContextPanel({
           : "flex h-full flex-col gap-3 overflow-y-auto pr-1",
       )}
     >
-      <Section title="Conversa">
+      <Section title="Conversa" icon={<MessageSquare className="size-3.5" />}>
         <div className="font-medium truncate">{chat?.title ?? "—"}</div>
-        <div className="mt-1 flex flex-wrap gap-1.5">
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
           {chat && <Pill tone="blue">orbe {chat.mode}</Pill>}
           {chat && <Pill tone="muted">{chat.model}</Pill>}
         </div>
       </Section>
 
       {projectId && (
-        <Section title="Projeto">
+        <Section title="Projeto" icon={<FolderOpen className="size-3.5" />}>
           <Link to="/app/projects/$id" params={{ id: projectId }} className="inline-flex items-center gap-1.5 text-[var(--orbe-blue)] hover:underline">
             <FolderOpen className="size-3.5" /> {projectName ?? projectId}
           </Link>
@@ -107,9 +107,14 @@ export function ChatContextPanel({
 
 function Section({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="orbe-card p-3">
-      <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 inline-flex items-center gap-1.5">
-        {icon} {title}
+    <div className="orbe-card orbe-card-hover p-4">
+      <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border/60">
+        {icon && (
+          <span className="flex items-center justify-center size-6 rounded-md bg-[color-mix(in_oklch,var(--orbe-blue)_12%,transparent)] text-[var(--orbe-blue)]">
+            {icon}
+          </span>
+        )}
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</span>
       </div>
       {children}
     </div>

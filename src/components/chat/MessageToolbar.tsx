@@ -8,9 +8,9 @@ export function MessageToolbar({
   onArtifact: () => void; onCompare: () => void; onPin: () => void;
   pinned?: boolean; disabled?: boolean;
 }) {
-  const cls = "h-7 px-2 text-xs";
+  const cls = "h-7 px-2 text-xs text-muted-foreground hover:text-foreground";
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-1">
+    <div className="mt-2 flex flex-wrap items-center gap-0.5 transition-opacity">
       <Button size="sm" variant="ghost" className={cls} onClick={onCopy} disabled={disabled}>
         <Copy className="size-3 mr-1" /> Copiar
       </Button>
