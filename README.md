@@ -69,3 +69,33 @@ O template alvo é Edge (Cloudflare Workers). Para Node SSR atrás de Nginx:
 1. `bun run build` gera o bundle SSR.
 2. Sirva com um runtime Node compatível e faça proxy reverso via Nginx.
 3. Configure variáveis de ambiente server-side (chaves de LLM, DB).
+
+## Ações funcionais locais (mock mode)
+
+Tudo persiste em `localStorage` com prefixo `orbeai:`. Os componentes consomem **services** em `src/lib/api/services/*`, nunca importam `mockData` direto.
+
+- **Chat**: criar/abrir conversas, enviar mensagens, regenerar, salvar resposta como memória pendente, transformar em artifact, comparar modelos em paralelo, fixar mensagens, anexar (mock) — painel direito com decisão do orbeRouter (provider, qualityTier, latência, custo, hints, fallback).
+- **Artifacts**: novo, editar, salvar versão, histórico real, exportar `.md/.txt`, melhorar com IA (mock), transformar formato, remover.
+- **Memória**: criar/editar/aprovar/arquivar/remover/exportar; filtros por escopo/status + busca.
+- **Projetos**: criar, editar, abrir chat associado, listar artifacts/memórias reais, remover.
+- **Integrações**: conectar/desconectar/configurar persiste e gera audit log.
+- **Modelos**: provider padrão, routing mode e fallback chain persistem; preview de decisão do orbeRouter.
+- **Admin**: feature flags reais, audit/usage filtráveis, reset demo data com confirmação.
+
+## Reset demo data
+
+Em `/app/admin` → botão **Reset demo data**. Limpa todas as chaves `orbeai:*` do localStorage e reseed do mock.
+
+## Onde plugar backend real
+
+- `src/lib/api/client.ts` — `ApiClient.request` (TODO Fase 1).
+- `src/lib/backend/backendClient.ts` — trocar `mockBackend` por implementação que chama TanStack server functions.
+- `src/server/api/*` — stubs server-side (LLM, router, memory, artifacts, projects, audit). Não chamam APIs externas até variáveis de ambiente estarem configuradas.
+- `src/lib/ai/providers/index.ts` — provedores reais (OpenAI/Anthropic/Gemini/etc) estão como `placeholder()` e só rodam quando `isConfigured()` retornar true.
+
+## Limitações atuais
+
+- Mock mode permanente (`VITE_MOCK_MODE=true`). Nenhum provider real é chamado.
+- Anexos no chat são apenas chips visuais — upload real entra na Fase 1.
+- Memória vetorial / embeddings não existem ainda.
+- Auditoria persiste só em `localStorage` (até 500 eventos).
