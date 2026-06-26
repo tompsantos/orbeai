@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppProjectsRouteImport } from './routes/app.projects'
+import { Route as AppModelsRouteImport } from './routes/app.models'
 import { Route as AppMemoryRouteImport } from './routes/app.memory'
 import { Route as AppIntegrationsRouteImport } from './routes/app.integrations'
 import { Route as AppChatRouteImport } from './routes/app.chat'
@@ -45,6 +46,11 @@ const AppResearchRoute = AppResearchRouteImport.update({
 const AppProjectsRoute = AppProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppModelsRoute = AppModelsRouteImport.update({
+  id: '/models',
+  path: '/models',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMemoryRoute = AppMemoryRouteImport.update({
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/app/chat': typeof AppChatRoute
   '/app/integrations': typeof AppIntegrationsRoute
   '/app/memory': typeof AppMemoryRoute
+  '/app/models': typeof AppModelsRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
   '/app/research': typeof AppResearchRoute
   '/app/': typeof AppIndexRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/app/chat': typeof AppChatRoute
   '/app/integrations': typeof AppIntegrationsRoute
   '/app/memory': typeof AppMemoryRoute
+  '/app/models': typeof AppModelsRoute
   '/app/research': typeof AppResearchRoute
   '/app': typeof AppIndexRoute
   '/app/projects/$id': typeof AppProjectsIdRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/app/chat': typeof AppChatRoute
   '/app/integrations': typeof AppIntegrationsRoute
   '/app/memory': typeof AppMemoryRoute
+  '/app/models': typeof AppModelsRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
   '/app/research': typeof AppResearchRoute
   '/app/': typeof AppIndexRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/app/chat'
     | '/app/integrations'
     | '/app/memory'
+    | '/app/models'
     | '/app/projects'
     | '/app/research'
     | '/app/'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/app/chat'
     | '/app/integrations'
     | '/app/memory'
+    | '/app/models'
     | '/app/research'
     | '/app'
     | '/app/projects/$id'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/app/chat'
     | '/app/integrations'
     | '/app/memory'
+    | '/app/models'
     | '/app/projects'
     | '/app/research'
     | '/app/'
@@ -207,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/app/projects'
       preLoaderRoute: typeof AppProjectsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/models': {
+      id: '/app/models'
+      path: '/models'
+      fullPath: '/app/models'
+      preLoaderRoute: typeof AppModelsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/memory': {
@@ -281,6 +300,7 @@ interface AppRouteChildren {
   AppChatRoute: typeof AppChatRoute
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppMemoryRoute: typeof AppMemoryRoute
+  AppModelsRoute: typeof AppModelsRoute
   AppProjectsRoute: typeof AppProjectsRouteWithChildren
   AppResearchRoute: typeof AppResearchRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -292,6 +312,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppChatRoute: AppChatRoute,
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppMemoryRoute: AppMemoryRoute,
+  AppModelsRoute: AppModelsRoute,
   AppProjectsRoute: AppProjectsRouteWithChildren,
   AppResearchRoute: AppResearchRoute,
   AppIndexRoute: AppIndexRoute,
