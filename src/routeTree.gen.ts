@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppProjectsRouteImport } from './routes/app.projects'
+import { Route as AppOrbeoneRouteImport } from './routes/app.orbeone'
 import { Route as AppModelsRouteImport } from './routes/app.models'
 import { Route as AppMemoryRouteImport } from './routes/app.memory'
 import { Route as AppIntegrationsRouteImport } from './routes/app.integrations'
@@ -46,6 +47,11 @@ const AppResearchRoute = AppResearchRouteImport.update({
 const AppProjectsRoute = AppProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrbeoneRoute = AppOrbeoneRouteImport.update({
+  id: '/orbeone',
+  path: '/orbeone',
   getParentRoute: () => AppRoute,
 } as any)
 const AppModelsRoute = AppModelsRouteImport.update({
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/app/integrations': typeof AppIntegrationsRoute
   '/app/memory': typeof AppMemoryRoute
   '/app/models': typeof AppModelsRoute
+  '/app/orbeone': typeof AppOrbeoneRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
   '/app/research': typeof AppResearchRoute
   '/app/': typeof AppIndexRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/app/integrations': typeof AppIntegrationsRoute
   '/app/memory': typeof AppMemoryRoute
   '/app/models': typeof AppModelsRoute
+  '/app/orbeone': typeof AppOrbeoneRoute
   '/app/research': typeof AppResearchRoute
   '/app': typeof AppIndexRoute
   '/app/projects/$id': typeof AppProjectsIdRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/app/integrations': typeof AppIntegrationsRoute
   '/app/memory': typeof AppMemoryRoute
   '/app/models': typeof AppModelsRoute
+  '/app/orbeone': typeof AppOrbeoneRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
   '/app/research': typeof AppResearchRoute
   '/app/': typeof AppIndexRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/app/integrations'
     | '/app/memory'
     | '/app/models'
+    | '/app/orbeone'
     | '/app/projects'
     | '/app/research'
     | '/app/'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/app/integrations'
     | '/app/memory'
     | '/app/models'
+    | '/app/orbeone'
     | '/app/research'
     | '/app'
     | '/app/projects/$id'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/app/integrations'
     | '/app/memory'
     | '/app/models'
+    | '/app/orbeone'
     | '/app/projects'
     | '/app/research'
     | '/app/'
@@ -219,6 +231,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/app/projects'
       preLoaderRoute: typeof AppProjectsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/orbeone': {
+      id: '/app/orbeone'
+      path: '/orbeone'
+      fullPath: '/app/orbeone'
+      preLoaderRoute: typeof AppOrbeoneRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/models': {
@@ -301,6 +320,7 @@ interface AppRouteChildren {
   AppIntegrationsRoute: typeof AppIntegrationsRoute
   AppMemoryRoute: typeof AppMemoryRoute
   AppModelsRoute: typeof AppModelsRoute
+  AppOrbeoneRoute: typeof AppOrbeoneRoute
   AppProjectsRoute: typeof AppProjectsRouteWithChildren
   AppResearchRoute: typeof AppResearchRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -313,6 +333,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIntegrationsRoute: AppIntegrationsRoute,
   AppMemoryRoute: AppMemoryRoute,
   AppModelsRoute: AppModelsRoute,
+  AppOrbeoneRoute: AppOrbeoneRoute,
   AppProjectsRoute: AppProjectsRouteWithChildren,
   AppResearchRoute: AppResearchRoute,
   AppIndexRoute: AppIndexRoute,
