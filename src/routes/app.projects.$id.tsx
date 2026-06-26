@@ -75,7 +75,7 @@ function ProjectPage() {
             <GlassCard>
               <SectionHeader eyebrow="agentes ativos" title="Time cognitivo" />
               <ul className="space-y-2">
-                {project.agents.map((a) => (
+                {project.agents.map((a: string) => (
                   <li key={a} className="flex items-center gap-2 text-sm"><Bot className="size-4 text-[var(--orbe-blue)]" /> {a}</li>
                 ))}
               </ul>
@@ -158,7 +158,7 @@ function ProjectPage() {
 
         <TabsContent value="agents" className="mt-6">
           <div className="grid md:grid-cols-3 gap-3">
-            {project.agents.map((a) => (
+            {project.agents.map((a: string) => (
               <GlassCard key={a}><div className="flex items-center gap-2"><Bot className="size-4 text-[var(--orbe-blue)]" /> <span className="font-medium text-sm">{a}</span></div></GlassCard>
             ))}
           </div>
