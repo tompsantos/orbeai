@@ -4,7 +4,7 @@ import type {
 } from "@/types";
 
 export const mockUser: User = {
-  id: "u_1", name: "Caio Almeida", email: "caio@orbeone.com",
+  id: "u_1", name: "orbeOne Admin", email: "admin@orbeone.com.br",
   role: "owner", workspaceId: "w_1",
 };
 
@@ -14,16 +14,16 @@ export const mockWorkspace: Workspace = {
 };
 
 export const orbeProducts: OrbeProduct[] = [
-  { slug: "orbeAI", name: "orbeAI", tagline: "cockpit cognitivo", description: "Sistema operacional cognitivo da orbeOne. Conversa, memória, agentes, pesquisa profunda e roteamento de modelos.", status: "ativo", category: "core" },
-  { slug: "orbeRadar", name: "orbeRadar", tagline: "inteligência de mercado", description: "Monitoramento contínuo de sinais, concorrentes e oportunidades.", status: "ativo", category: "intelligence" },
-  { slug: "orbeRisk", name: "orbeRisk", tagline: "risco e compliance", description: "Avaliação de risco operacional, regulatório e reputacional.", status: "ativo", category: "governance" },
-  { slug: "orbeAuto", name: "orbeAuto", tagline: "automação inteligente", description: "Workflows e agentes operacionais conectados a dados reais.", status: "ativo", category: "automation" },
-  { slug: "orbeVault", name: "orbeVault", tagline: "memória corporativa", description: "Cofre seguro de conhecimento, documentos e decisões da empresa.", status: "ativo", category: "governance" },
-  { slug: "orbeGov", name: "orbeGov", tagline: "governo e licitações", description: "Inteligência para editais, TRs, processos públicos e compliance.", status: "beta", category: "governance" },
-  { slug: "orbeCorp", name: "orbeCorp", tagline: "operação corporativa", description: "Camada operacional para times comerciais, jurídicos e financeiros.", status: "ativo", category: "intelligence" },
-  { slug: "orbeZen", name: "orbeZen", tagline: "foco e bem-estar", description: "Rotina cognitiva, foco e gestão de energia mental.", status: "beta", category: "wellbeing" },
-  { slug: "orbeX", name: "orbeX", tagline: "laboratório experimental", description: "Produtos exploratórios e pesquisa aplicada.", status: "em breve", category: "experimental" },
-  { slug: "orbeScience", name: "orbeScience", tagline: "ciência aplicada", description: "Pesquisa científica, papers e síntese técnica.", status: "em breve", category: "experimental" },
+  { slug: "orbeAI", name: "orbeAI", tagline: "sistema operacional cognitivo", description: "Sistema operacional cognitivo central da orbeOne: conversa multimodal, memória controlável, agentes, pesquisa profunda, artifacts e roteamento inteligente de modelos.", status: "ativo", category: "core" },
+  { slug: "orbeRadar", name: "orbeRadar", tagline: "inteligência comercial", description: "Plataforma de inteligência comercial para prospecção, sinais de mercado, scoring de leads, detecção de oportunidades e estratégia consultiva de vendas.", status: "ativo", category: "intelligence" },
+  { slug: "orbeRisk", name: "orbeRisk", tagline: "risco e reputação", description: "Plataforma de análise de risco documental, empresarial e reputacional, com evidências, alertas e trilhas auditáveis.", status: "ativo", category: "governance" },
+  { slug: "orbeAuto", name: "orbeAuto", tagline: "oficinas e funilarias", description: "SaaS para oficinas mecânicas e funilarias: orçamentos, veículos, fotos, workflow, documentos de seguradora e gestão operacional.", status: "ativo", category: "automation" },
+  { slug: "orbeVault", name: "orbeVault", tagline: "cofre inteligente", description: "Cofre seguro e inteligente para documentos sensíveis, certificados, chaves, certificados digitais, arquivos, assinaturas, memória e acesso controlado.", status: "ativo", category: "governance" },
+  { slug: "orbeGov", name: "orbeGov", tagline: "setor público", description: "Inteligência para setor público: termos de referência, contratações, licitações, compliance e fluxos administrativos.", status: "beta", category: "governance" },
+  { slug: "orbeCorp", name: "orbeCorp", tagline: "camada corporativa", description: "Camada corporativa de IA e automação para empresas, processos, departamentos e tomada de decisão.", status: "ativo", category: "intelligence" },
+  { slug: "orbeZen", name: "orbeZen", tagline: "foco e bem-estar", description: "Assistente de foco, rotina, energia mental e bem-estar.", status: "beta", category: "wellbeing" },
+  { slug: "orbeX", name: "orbeX", tagline: "laboratório experimental", description: "Laboratório experimental para produtos avançados de IA da orbeOne.", status: "em breve", category: "experimental" },
+  { slug: "orbeScience", name: "orbeScience", tagline: "ciência aplicada", description: "Pesquisa, papers, síntese científica e inteligência de ciência aplicada.", status: "em breve", category: "experimental" },
 ];
 
 export const mockProjects: Project[] = [
@@ -206,9 +206,9 @@ export const mockResearch: ResearchReport[] = [
 ];
 
 export const mockAudit: AuditLog[] = [
-  { id: "al_1", actor: "Caio Almeida", action: "criou projeto", target: "orbeAI Core", at: "2026-06-25T14:20:00Z", level: "info" },
+  { id: "al_1", actor: "orbeOne Admin", action: "criou projeto", target: "orbeAI Core", at: "2026-06-25T14:20:00Z", level: "info" },
   { id: "al_2", actor: "system", action: "fallback acionado", target: "openai → anthropic", at: "2026-06-25T13:11:00Z", level: "warn" },
-  { id: "al_3", actor: "Caio Almeida", action: "removeu memória sensível", target: "mem_old_42", at: "2026-06-24T22:00:00Z", level: "info" },
+  { id: "al_3", actor: "orbeOne Admin", action: "removeu memória sensível", target: "mem_old_42", at: "2026-06-24T22:00:00Z", level: "info" },
   { id: "al_4", actor: "agent:orbe-research", action: "iniciou pesquisa", target: "concorrentes LATAM", at: "2026-06-24T15:10:00Z", level: "info" },
   { id: "al_5", actor: "system", action: "erro de provedor", target: "qwen timeout", at: "2026-06-23T10:02:00Z", level: "error" },
 ];

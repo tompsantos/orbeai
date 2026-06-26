@@ -108,7 +108,7 @@ export function AppShell() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Caio Almeida · owner</DropdownMenuLabel>
+              <DropdownMenuLabel>orbeOne Admin · owner</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild><Link to="/app/settings">Ajustes</Link></DropdownMenuItem>
               <DropdownMenuItem asChild><Link to="/app/memory">Memória</Link></DropdownMenuItem>
