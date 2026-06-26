@@ -16,6 +16,7 @@ import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppProjectsRouteImport } from './routes/app.projects'
 import { Route as AppChatRouteImport } from './routes/app.chat'
 import { Route as AppArtifactsRouteImport } from './routes/app.artifacts'
+import { Route as AppAgentsRouteImport } from './routes/app.agents'
 import { Route as AppProjectsIndexRouteImport } from './routes/app.projects.index'
 import { Route as AppProjectsIdRouteImport } from './routes/app.projects.$id'
 
@@ -54,6 +55,11 @@ const AppArtifactsRoute = AppArtifactsRouteImport.update({
   path: '/artifacts',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAgentsRoute = AppAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProjectsIndexRoute = AppProjectsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -68,6 +74,7 @@ const AppProjectsIdRoute = AppProjectsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/agents': typeof AppAgentsRoute
   '/app/artifacts': typeof AppArtifactsRoute
   '/app/chat': typeof AppChatRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
@@ -78,6 +85,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/agents': typeof AppAgentsRoute
   '/app/artifacts': typeof AppArtifactsRoute
   '/app/chat': typeof AppChatRoute
   '/app/research': typeof AppResearchRoute
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/agents': typeof AppAgentsRoute
   '/app/artifacts': typeof AppArtifactsRoute
   '/app/chat': typeof AppChatRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
@@ -102,6 +111,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/app/agents'
     | '/app/artifacts'
     | '/app/chat'
     | '/app/projects'
@@ -112,6 +122,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app/agents'
     | '/app/artifacts'
     | '/app/chat'
     | '/app/research'
@@ -122,6 +133,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/app/agents'
     | '/app/artifacts'
     | '/app/chat'
     | '/app/projects'
@@ -187,6 +199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppArtifactsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/agents': {
+      id: '/app/agents'
+      path: '/agents'
+      fullPath: '/app/agents'
+      preLoaderRoute: typeof AppAgentsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/projects/': {
       id: '/app/projects/'
       path: '/'
@@ -219,6 +238,7 @@ const AppProjectsRouteWithChildren = AppProjectsRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAgentsRoute: typeof AppAgentsRoute
   AppArtifactsRoute: typeof AppArtifactsRoute
   AppChatRoute: typeof AppChatRoute
   AppProjectsRoute: typeof AppProjectsRouteWithChildren
@@ -227,6 +247,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAgentsRoute: AppAgentsRoute,
   AppArtifactsRoute: AppArtifactsRoute,
   AppChatRoute: AppChatRoute,
   AppProjectsRoute: AppProjectsRouteWithChildren,
