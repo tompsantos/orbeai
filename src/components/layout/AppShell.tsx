@@ -104,7 +104,7 @@ export function AppShell() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="rounded-full ring-1 ring-border hover:ring-[var(--orbe-blue)] transition">
-                <Avatar className="size-8"><AvatarFallback>CA</AvatarFallback></Avatar>
+                <Avatar className="size-8"><AvatarFallback className="text-[11px] font-semibold tracking-wide bg-[var(--orbe-blue)]/15 text-[var(--orbe-blue)]">OA</AvatarFallback></Avatar>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">

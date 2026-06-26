@@ -209,7 +209,7 @@ function Bubble({ message }: { message: Message }) {
           </div>
         )}
       </div>
-      {isUser && <Avatar className="size-7 mt-1"><AvatarFallback>CA</AvatarFallback></Avatar>}
+      {isUser && <Avatar className="size-7 mt-1"><AvatarFallback className="text-[10px] font-semibold bg-[var(--orbe-blue)]/15 text-[var(--orbe-blue)]">OA</AvatarFallback></Avatar>}
     </div>
   );
 }
