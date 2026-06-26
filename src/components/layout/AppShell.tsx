@@ -58,7 +58,7 @@ export function AppShell() {
             return (
               <Link
                 key={item.to}
-                to={item.to}
+                to={item.to as any}
                 className={cn(
                   "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   active
@@ -130,7 +130,7 @@ export function AppShell() {
           const Icon = item.icon;
           const active = isActive(item.to, item.exact);
           return (
-            <Link key={item.to} to={item.to} className={cn("flex flex-col items-center gap-0.5 text-[10px]",
+            <Link key={item.to} to={item.to as any} className={cn("flex flex-col items-center gap-0.5 text-[10px]",
               active ? "text-[var(--orbe-blue)]" : "text-muted-foreground")}>
               <Icon className="size-5" />
               <span>{item.label}</span>
