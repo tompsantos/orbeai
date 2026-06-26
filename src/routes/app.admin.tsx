@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { GlassCard, Pill, SectionHeader } from "@/components/design-system/Primitives";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockAuditLogs, mockFeatureFlags, mockUsage } from "@/lib/mock/data";
+import { mockAudit, mockFlags, mockUsage } from "@/lib/mock/data";
 import { Switch } from "@/components/ui/switch";
 import { Activity, AlertTriangle, ShieldCheck, Users } from "lucide-react";
 
@@ -37,7 +37,7 @@ function AdminPage() {
         <TabsContent value="audit" className="mt-5">
           <GlassCard>
             <ul className="divide-y">
-              {mockAuditLogs.map((log) => (
+              {mockAudit.map((log: any) => (
                 <li key={log.id} className="py-3 flex items-center gap-3 text-sm">
                   <Pill tone={log.level === "error" ? "warn" : log.level === "warn" ? "warn" : "muted"}>{log.level}</Pill>
                   <span className="font-medium">{log.actor}</span>
@@ -68,7 +68,7 @@ function AdminPage() {
 
         <TabsContent value="flags" className="mt-5">
           <div className="grid md:grid-cols-2 gap-3">
-            {mockFeatureFlags.map((f) => (
+            {mockFlags.map((f: any) => (
               <GlassCard key={f.key}>
                 <div className="flex items-center justify-between">
                   <div>
