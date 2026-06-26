@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { GlassCard, Pill, SectionHeader } from "@/components/design-system/Primitives";
+import { GlassCard, IconBadge, Pill, SectionHeader } from "@/components/design-system/Primitives";
 import { Button } from "@/components/ui/button";
 import { integrationService } from "@/lib/api";
 import type { Integration } from "@/types";
 import { Plug, Settings } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/integrations")({
   head: () => ({ meta: [{ title: "Integrações · orbeAI" }] }),
@@ -45,29 +46,36 @@ function IntegrationsPage() {
 
       {Object.entries(grouped).map(([cat, list]) => (
         <section key={cat} className="space-y-3">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground">{cat}</div>
+          <div className="flex items-center gap-3">
+            <div className="orbe-eyebrow">{cat}</div>
+            <div className="orbe-hairline flex-1" />
+            <span className="text-[11px] text-muted-foreground">{list.length}</span>
+          </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {list.map((it) => (
-              <GlassCard key={it.slug} className="orbe-card-hover">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="size-9 rounded-lg bg-muted/50 flex items-center justify-center"><Plug className="size-4 text-[var(--orbe-blue)]" /></div>
-                    <div className="font-medium">{it.name}</div>
+            {list.map((it) => {
+              const connected = it.status === "conectado";
+              return (
+              <GlassCard key={it.slug} className={cn("flex flex-col", connected && "orbe-active")}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <IconBadge icon={Plug} size="sm" tone={connected ? "blue" : "muted"} />
+                    <div className="font-medium truncate">{it.name}</div>
                   </div>
-                  <Pill tone={it.status === "conectado" ? "success" : it.status === "configurar" ? "warn" : "muted"}>{it.status}</Pill>
+                  <Pill tone={connected ? "success" : it.status === "configurar" ? "warn" : "muted"}>{it.status}</Pill>
                 </div>
-                <p className="text-xs text-muted-foreground mt-3">{it.description}</p>
+                <p className="text-xs text-muted-foreground mt-3 leading-relaxed flex-1">{it.description}</p>
                 <div className="mt-3 flex flex-wrap gap-1">
-                  {it.permissions.map((p) => <span key={p} className="text-[10px] rounded bg-muted/50 px-1.5 py-0.5">{p}</span>)}
+                  {it.permissions.map((p) => <span key={p} className="text-[10px] rounded-md bg-muted/60 border border-border/50 px-1.5 py-0.5 text-muted-foreground">{p}</span>)}
                 </div>
                 <div className="mt-4 flex gap-2">
-                  <Button size="sm" className="flex-1" onClick={() => toggle(it)}>
-                    {it.status === "conectado" ? "Desconectar" : "Conectar"}
+                  <Button size="sm" variant={connected ? "outline" : "default"} className="flex-1" onClick={() => toggle(it)}>
+                    {connected ? "Desconectar" : "Conectar"}
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => configure(it)} title="Configurar"><Settings className="size-3.5" /></Button>
                 </div>
               </GlassCard>
-            ))}
+              );
+            })}
           </div>
         </section>
       ))}

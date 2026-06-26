@@ -77,24 +77,24 @@ function MemoryPage() {
         description="Você decide o que a orbeAI lembra, edita ou apaga."
         action={<Button onClick={() => { setEditing(null); setDialogOpen(true); }}><Plus className="size-4 mr-1" /> Nova memória</Button>} />
 
-      <GlassCard className="border-[var(--orbe-blue)]/30">
-        <div className="flex items-start gap-3">
-          <div className="size-10 rounded-xl bg-gradient-to-br from-[var(--orbe-blue)] to-[var(--orbe-cyan)] flex items-center justify-center"><Shield className="size-5 text-white" /></div>
+      <GlassCard className="orbe-active" hoverable={false}>
+        <div className="flex items-start gap-3.5">
+          <div className="size-10 rounded-xl bg-gradient-to-br from-[var(--orbe-blue)] to-[var(--orbe-cyan)] flex items-center justify-center shrink-0 shadow-[var(--shadow-soft)]"><Shield className="size-5 text-white" /></div>
           <div>
             <div className="font-semibold">Política de memória</div>
-            <p className="text-sm text-muted-foreground mt-1">
-              A orbeAI usa memória para manter contexto, mas o usuário sempre controla o que é salvo, editado ou apagado.
+            <p className="text-sm text-muted-foreground mt-1 text-pretty">
+              A orbeAI usa memória para manter contexto, mas você sempre controla o que é salvo, editado ou apagado.
             </p>
           </div>
         </div>
       </GlassCard>
 
       <div className="flex flex-col md:flex-row gap-3 md:items-center">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1 p-1 rounded-xl orbe-surface">
           {TABS.map((t) => (
             <button key={t} onClick={() => setTab(t)}
-              className={cn("px-3 py-1.5 rounded-full text-xs border transition",
-                tab === t ? "bg-[var(--orbe-blue)] text-white border-transparent" : "hover:bg-accent/50")}>
+              className={cn("px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors",
+                tab === t ? "bg-card text-foreground shadow-[var(--shadow-xs)]" : "text-muted-foreground hover:text-foreground")}>
               {t}
             </button>
           ))}

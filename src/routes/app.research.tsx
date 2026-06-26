@@ -10,6 +10,7 @@ import { researchService, artifactService } from "@/lib/api";
 import type { ResearchReport } from "@/types";
 import { AlertTriangle, Calendar, Download, FileSearch, FlaskConical, Globe, Library, Loader2, Save, Send, Workflow } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/research")({
   head: () => ({ meta: [{ title: "Pesquisa profunda · orbeAI" }] }),
@@ -87,14 +88,15 @@ function ResearchPage() {
             </Button>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Fontes</div>
-            <div className="flex flex-wrap gap-3">
+            <div className="orbe-eyebrow mb-2">Fontes</div>
+            <div className="flex flex-wrap gap-2">
               {SOURCES.map((s) => {
                 const Icon = s.icon; const on = selected.includes(s.id);
                 return (
-                  <label key={s.id} className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer transition ${on ? "border-[var(--orbe-blue)] bg-[color-mix(in_oklch,var(--orbe-blue)_8%,transparent)]" : ""}`}>
+                  <label key={s.id} className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm cursor-pointer transition-colors",
+                    on ? "border-[color-mix(in_oklch,var(--orbe-blue)_40%,transparent)] bg-[color-mix(in_oklch,var(--orbe-blue)_8%,transparent)]" : "border-border/70 hover:bg-accent/40")}>
                     <Checkbox checked={on} onCheckedChange={() => toggle(s.id)} />
-                    <Icon className="size-4 text-[var(--orbe-blue)]" /> {s.label}
+                    <Icon className={cn("size-4", on ? "text-[var(--orbe-blue)]" : "text-muted-foreground")} /> {s.label}
                   </label>
                 );
               })}
@@ -107,7 +109,10 @@ function ResearchPage() {
         <div className="flex gap-2 flex-wrap">
           {reports.map((r) => (
             <button key={r.id} onClick={() => setActiveId(r.id)}
-              className={`px-3 py-1.5 rounded-full text-xs border transition ${activeId === r.id ? "bg-[var(--orbe-blue)] text-white border-transparent" : "hover:bg-accent/50"}`}>
+              className={cn("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                activeId === r.id
+                  ? "bg-[var(--orbe-blue)] text-white border-transparent shadow-[var(--shadow-xs)]"
+                  : "border-border/70 text-muted-foreground hover:text-foreground hover:bg-accent/50")}>
               {r.question.slice(0, 48)}{r.question.length > 48 ? "…" : ""}
             </button>
           ))}
@@ -122,13 +127,13 @@ function ResearchPage() {
           <div className="grid lg:grid-cols-3 gap-4">
             <GlassCard className="lg:col-span-2">
               <SectionHeader eyebrow="plano de pesquisa" title="Etapas previstas" />
-              <ol className="space-y-3">
+              <ol className="space-y-3.5">
                 {active.plan.map((step, i) => (
                   <li key={i} className="flex items-start gap-3">
-                    <div className="size-6 rounded-full bg-gradient-to-br from-[var(--orbe-blue)] to-[var(--orbe-cyan)] text-white text-xs flex items-center justify-center">{i + 1}</div>
-                    <div className="flex-1">
+                    <div className="size-6 rounded-full bg-gradient-to-br from-[var(--orbe-blue)] to-[var(--orbe-cyan)] text-white text-xs font-medium flex items-center justify-center shrink-0 shadow-[var(--shadow-xs)]">{i + 1}</div>
+                    <div className="flex-1 min-w-0">
                       <div className="text-sm">{step}</div>
-                      <Progress value={i === 0 ? 100 : i === 1 ? 60 : 20} className="mt-1.5 h-1.5" />
+                      <Progress value={i === 0 ? 100 : i === 1 ? 60 : 20} className="mt-2 h-1.5" />
                     </div>
                   </li>
                 ))}
@@ -156,10 +161,10 @@ function ResearchPage() {
                   <GlassCard key={s.id}>
                     <div className="flex items-center justify-between">
                       <Pill tone="blue">{s.kind}</Pill>
-                      <span className="text-xs text-muted-foreground">conf. {(s.confidence * 100).toFixed(0)}%</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">conf. {(s.confidence * 100).toFixed(0)}%</span>
                     </div>
-                    <div className="font-medium mt-2 text-sm">{s.title}</div>
-                    <p className="text-xs text-muted-foreground mt-2">{s.excerpt}</p>
+                    <div className="font-medium mt-2.5 text-sm">{s.title}</div>
+                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-4">{s.excerpt}</p>
                   </GlassCard>
                 ))}
               </div>

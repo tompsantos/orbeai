@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { GlassCard, Pill, SectionHeader } from "@/components/design-system/Primitives";
+import { GlassCard, Pill, SectionHeader, StatCard, StatusDot } from "@/components/design-system/Primitives";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { localStore } from "@/lib/storage/localStore";
 import type { AuditLog, FeatureFlag, UsageMetric } from "@/types";
 import { Activity, AlertTriangle, RefreshCw, ShieldCheck, Users } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/admin")({
   head: () => ({ meta: [{ title: "Admin · orbeAI" }] }),
@@ -58,10 +59,10 @@ function AdminPage() {
         action={<Button variant="outline" size="sm" onClick={() => setResetOpen(true)}><RefreshCw className="size-4 mr-1" /> Reset demo data</Button>} />
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <Metric icon={<Users className="size-4" />} label="Usuários" value="24" hint="3 admins" />
-        <Metric icon={<Activity className="size-4" />} label="Tokens (7d)" value={totalTokens.toLocaleString("pt-BR")} hint="todos os provedores" />
-        <Metric icon={<ShieldCheck className="size-4" />} label="Eventos de auditoria" value={logs.length.toString()} hint="locais" />
-        <Metric icon={<AlertTriangle className="size-4" />} label="Custo estimado" value={`$${totalCost.toFixed(2)}`} hint="mock" />
+        <StatCard icon={Users} label="Usuários" value="24" hint="3 admins" />
+        <StatCard icon={Activity} label="Tokens (7d)" value={totalTokens.toLocaleString("pt-BR")} hint="todos os provedores" />
+        <StatCard icon={ShieldCheck} label="Eventos de auditoria" value={logs.length.toString()} hint="locais" />
+        <StatCard icon={AlertTriangle} label="Custo estimado" value={`$${totalCost.toFixed(2)}`} hint="mock" />
       </div>
 
       <Tabs defaultValue="audit">
@@ -86,18 +87,18 @@ function AdminPage() {
               </SelectContent>
             </Select>
           </div>
-          <GlassCard>
+          <GlassCard hoverable={false}>
             {logs.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum evento.</p>
             ) : (
-              <ul className="divide-y">
+              <ul className="divide-y divide-border/60">
                 {logs.map((log) => (
-                  <li key={log.id} className="py-3 flex items-center gap-3 text-sm flex-wrap">
-                    <Pill tone={log.level === "error" ? "warn" : log.level === "warn" ? "warn" : "muted"}>{log.level}</Pill>
+                  <li key={log.id} className="py-3 flex items-center gap-3 text-sm flex-wrap first:pt-0 last:pb-0">
+                    <Pill tone={log.level === "error" ? "danger" : log.level === "warn" ? "warn" : "muted"}>{log.level}</Pill>
                     <span className="font-medium">{log.actor}</span>
                     <span className="text-muted-foreground">{log.action}</span>
                     <span className="text-muted-foreground">→ {log.target}</span>
-                    <span className="ml-auto text-xs text-muted-foreground">{new Date(log.at).toLocaleString("pt-BR")}</span>
+                    <span className="ml-auto text-xs text-muted-foreground tabular-nums">{new Date(log.at).toLocaleString("pt-BR")}</span>
                   </li>
                 ))}
               </ul>
@@ -106,15 +107,15 @@ function AdminPage() {
         </TabsContent>
 
         <TabsContent value="usage" className="mt-5">
-          <GlassCard>
-            <ul className="divide-y">
+          <GlassCard hoverable={false}>
+            <ul className="divide-y divide-border/60">
               {usage.map((u, i) => (
-                <li key={i} className="py-3 flex items-center gap-3 text-sm flex-wrap">
-                  <span className="text-muted-foreground w-24">{u.date}</span>
+                <li key={i} className="py-3 flex items-center gap-3 text-sm flex-wrap first:pt-0 last:pb-0">
+                  <span className="text-muted-foreground w-24 tabular-nums">{u.date}</span>
                   <Pill tone="blue">{u.provider}</Pill>
-                  <span>{u.tokens.toLocaleString("pt-BR")} tokens</span>
-                  <span className="text-muted-foreground">{u.requests} req</span>
-                  <span className="ml-auto">${u.costUsd.toFixed(2)}</span>
+                  <span className="tabular-nums">{u.tokens.toLocaleString("pt-BR")} tokens</span>
+                  <span className="text-muted-foreground tabular-nums">{u.requests} req</span>
+                  <span className="ml-auto tabular-nums font-medium">${u.costUsd.toFixed(2)}</span>
                 </li>
               ))}
             </ul>
@@ -124,11 +125,14 @@ function AdminPage() {
         <TabsContent value="flags" className="mt-5">
           <div className="grid md:grid-cols-2 gap-3">
             {flags.map((f) => (
-              <GlassCard key={f.key}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{f.label}</div>
-                    <div className="text-[11px] text-muted-foreground">{f.key} · {f.audience}</div>
+              <GlassCard key={f.key} className={cn(f.enabled && "orbe-active")}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-medium flex items-center gap-2">
+                      <StatusDot tone={f.enabled ? "success" : "neutral"} pulse={false} />
+                      {f.label}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-1 font-mono">{f.key} · {f.audience}</div>
                   </div>
                   <Switch checked={f.enabled} onCheckedChange={() => onToggleFlag(f.key)} />
                 </div>
@@ -148,12 +152,20 @@ function AdminPage() {
         </TabsContent>
 
         <TabsContent value="health" className="mt-5">
-          <GlassCard>
-            <ul className="text-sm space-y-2">
-              <li>✅ API gateway: operacional</li>
-              <li>✅ Mock provider: 100% disponibilidade</li>
-              <li>✅ Memória vetorial: simulada, ok</li>
-              <li>⚠️ Provedores reais: aguardando chaves server-side</li>
+          <GlassCard hoverable={false}>
+            <ul className="text-sm divide-y divide-border/60">
+              {[
+                { tone: "success" as const, label: "API gateway", value: "operacional" },
+                { tone: "success" as const, label: "Mock provider", value: "100% disponibilidade" },
+                { tone: "success" as const, label: "Memória vetorial", value: "simulada, ok" },
+                { tone: "warn" as const, label: "Provedores reais", value: "aguardando chaves server-side" },
+              ].map((h) => (
+                <li key={h.label} className="py-3 flex items-center gap-3 first:pt-0 last:pb-0">
+                  <StatusDot tone={h.tone} />
+                  <span className="font-medium">{h.label}</span>
+                  <span className="ml-auto text-muted-foreground text-xs">{h.value}</span>
+                </li>
+              ))}
             </ul>
           </GlassCard>
         </TabsContent>
@@ -164,15 +176,5 @@ function AdminPage() {
         description="Isso vai apagar todos os dados locais (chats, projetos, artifacts, memória) e restaurar o mock inicial."
         confirmLabel="Resetar" destructive onConfirm={onReset} />
     </div>
-  );
-}
-
-function Metric({ icon, label, value, hint }: { icon: React.ReactNode; label: string; value: string; hint?: string }) {
-  return (
-    <GlassCard>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">{icon} {label}</div>
-      <div className="text-2xl font-semibold mt-2">{value}</div>
-      {hint && <div className="text-[11px] text-muted-foreground mt-1">{hint}</div>}
-    </GlassCard>
   );
 }

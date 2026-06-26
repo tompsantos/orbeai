@@ -46,43 +46,49 @@ function ModelsPage() {
       <SectionHeader eyebrow="model router" title="Roteamento inteligente de modelos"
         description="orbeRouter escolhe o melhor provedor por tarefa, custo e latência." />
 
-      <GlassCard className="border-[var(--warning)]/30">
+      <GlassCard hoverable={false} className="border-[color-mix(in_oklch,var(--warning)_35%,var(--border))] bg-[color-mix(in_oklch,var(--warning)_7%,var(--card))]">
         <div className="flex items-start gap-3 text-sm">
-          <AlertTriangle className="size-4 text-[var(--warning)] mt-0.5" />
+          <span className="flex items-center justify-center size-8 rounded-lg bg-[color-mix(in_oklch,var(--warning)_18%,transparent)] shrink-0">
+            <AlertTriangle className="size-4 text-[var(--warning)]" />
+          </span>
           <div>
             <div className="font-medium">Chaves reais entram server-side depois.</div>
-            <p className="text-muted-foreground mt-1">A configuração aqui é local. Provedores reais só serão chamados após plugar variáveis de ambiente no backend.</p>
+            <p className="text-muted-foreground mt-1 text-pretty">A configuração aqui é local. Provedores reais só serão chamados após plugar variáveis de ambiente no backend.</p>
           </div>
         </div>
       </GlassCard>
 
-      <GlassCard>
+      <GlassCard hoverable={false}>
         <SectionHeader eyebrow="modo de roteamento" title="Como a orbeAI escolhe modelos" />
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {MODES.map((m) => (
             <button key={m} onClick={() => setMode(m)}
-              className={cn("px-3 py-1.5 rounded-full text-xs border transition",
-                config.routingMode === m ? "bg-[var(--orbe-blue)] text-white border-transparent" : "hover:bg-accent/50")}>
+              className={cn("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                config.routingMode === m
+                  ? "bg-[var(--orbe-blue)] text-white border-transparent shadow-[var(--shadow-xs)]"
+                  : "border-border/70 text-muted-foreground hover:text-foreground hover:bg-accent/50")}>
               {m}
             </button>
           ))}
         </div>
         {preview && (
           <div className="mt-4 grid sm:grid-cols-2 gap-3 text-xs">
-            <div className="rounded-md bg-muted/30 p-3">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">decisão preview</div>
-              <div className="mt-1 font-medium">{preview.provider} · {preview.qualityTier}</div>
-              <div className="text-muted-foreground">{preview.reason}</div>
-              <div className="text-muted-foreground mt-1">~{preview.estimatedLatencyMs}ms · US$ {preview.estimatedCostUsd.toFixed(4)}/1k</div>
+            <div className="orbe-surface p-3.5">
+              <div className="orbe-eyebrow">decisão preview</div>
+              <div className="mt-2 font-medium text-sm">{preview.provider} · {preview.qualityTier}</div>
+              <div className="text-muted-foreground mt-0.5">{preview.reason}</div>
+              <div className="text-muted-foreground mt-1.5 tabular-nums">~{preview.estimatedLatencyMs}ms · US$ {preview.estimatedCostUsd.toFixed(4)}/1k</div>
             </div>
-            <div className="rounded-md bg-muted/30 p-3">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">cadeia de fallback</div>
-              <div className="mt-1 inline-flex items-center gap-1 text-xs"><RouteIcon className="size-3" /> {config.fallbackChain.join(" → ")}</div>
-              <div className="mt-2 flex flex-wrap gap-1">
+            <div className="orbe-surface p-3.5">
+              <div className="orbe-eyebrow">cadeia de fallback</div>
+              <div className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium"><RouteIcon className="size-3 text-[var(--orbe-blue)]" /> {config.fallbackChain.join(" → ")}</div>
+              <div className="mt-2.5 flex flex-wrap gap-1">
                 {ALL.map((slug) => (
                   <button key={slug} onClick={() => toggleFallback(slug)}
-                    className={cn("px-2 py-0.5 rounded text-[11px] border",
-                      config.fallbackChain.includes(slug) ? "bg-[var(--orbe-blue)] text-white border-transparent" : "hover:bg-accent/40")}>
+                    className={cn("px-2 py-0.5 rounded-md text-[11px] border transition-colors",
+                      config.fallbackChain.includes(slug)
+                        ? "bg-[var(--orbe-blue)] text-white border-transparent"
+                        : "border-border/70 text-muted-foreground hover:bg-accent/40")}>
                     {slug}
                   </button>
                 ))}
@@ -106,11 +112,11 @@ function ModelsPage() {
               <Pill tone={p.status === "online" ? "success" : p.status === "placeholder" ? "muted" : "warn"}>{p.status}</Pill>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-md bg-muted/30 p-2"><Activity className="inline size-3 mr-1" /> {p.latencyMs ?? "—"} ms</div>
-              <div className="rounded-md bg-muted/30 p-2"><Zap className="inline size-3 mr-1" /> ${p.costPerKTokens?.toFixed(3) ?? "0.000"}/1k</div>
+              <div className="orbe-surface p-2 tabular-nums"><Activity className="inline size-3 mr-1 text-muted-foreground" /> {p.latencyMs ?? "—"} ms</div>
+              <div className="orbe-surface p-2 tabular-nums"><Zap className="inline size-3 mr-1 text-muted-foreground" /> ${p.costPerKTokens?.toFixed(3) ?? "0.000"}/1k</div>
             </div>
             <div className="mt-3">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Modelos</div>
+              <div className="orbe-eyebrow mb-1.5">Modelos</div>
               <div className="flex flex-wrap gap-1">{p.models.map((m) => <Pill key={m} tone="muted">{m}</Pill>)}</div>
             </div>
             <div className="mt-3 flex items-center justify-between text-xs">

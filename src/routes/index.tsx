@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { OrbeWordmark, OrbeMark } from "@/components/design-system/OrbeLogo";
-import { GlassCard, Pill, SectionHeader } from "@/components/design-system/Primitives";
+import { GlassCard, IconBadge, Pill, SectionHeader, StatusDot } from "@/components/design-system/Primitives";
 import {
-  ArrowRight, Bot, Boxes, Compass, FlaskConical, MessageSquare,
+  ArrowRight, Bot, Boxes, Check, Compass, FlaskConical, MessageSquare,
   Network, ShieldCheck, Sparkles, Workflow,
 } from "lucide-react";
 import { orbeProducts } from "@/lib/mock/data";
@@ -42,15 +42,15 @@ function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="mx-auto max-w-7xl px-6 pt-20 pb-16 text-center">
-        <Pill tone="blue">orbeOne · cockpit cognitivo</Pill>
-        <h1 className="mt-6 text-5xl md:text-7xl font-semibold tracking-tight">
+      <section className="mx-auto max-w-7xl px-6 pt-20 pb-16 text-center flex flex-col items-center">
+        <Pill tone="blue"><Sparkles className="size-3" /> orbeOne · cockpit cognitivo</Pill>
+        <h1 className="mt-6 text-6xl md:text-8xl font-semibold tracking-tight">
           <span className="orbe-gradient-text">orbeAI</span>
         </h1>
-        <p className="mt-4 text-xl md:text-2xl font-medium text-foreground/90">
+        <p className="mt-4 text-xl md:text-2xl font-medium text-foreground/90 text-balance">
           o sistema operacional cognitivo da orbeOne.
         </p>
-        <p className="mt-5 mx-auto max-w-2xl text-muted-foreground">
+        <p className="mt-5 mx-auto max-w-2xl text-muted-foreground text-pretty leading-relaxed">
           Converse, pesquise, crie, automatize e conecte inteligência aos produtos da orbeOne em um único cockpit premium.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -108,9 +108,9 @@ function Landing() {
             { i: Workflow, t: "Integrações", d: "Drive, GitHub, Notion, Slack, WhatsApp, Supabase e ecossistema orbeOne." },
           ].map(({ i: Icon, t, d }) => (
             <GlassCard key={t}>
-              <div className="size-10 rounded-lg orbe-glass flex items-center justify-center mb-3"><Icon className="size-5 text-[var(--orbe-blue)]" /></div>
+              <IconBadge icon={Icon} className="mb-3" />
               <h3 className="font-semibold">{t}</h3>
-              <p className="text-sm text-muted-foreground mt-1.5">{d}</p>
+              <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{d}</p>
             </GlassCard>
           ))}
         </div>
@@ -124,11 +124,11 @@ function Landing() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {orbeProducts.map((p) => (
               <div key={p.slug} className="orbe-card orbe-card-hover p-4 text-center">
-                <div className="mx-auto size-10 rounded-full bg-gradient-to-br from-[var(--orbe-blue)] to-[var(--orbe-cyan)] flex items-center justify-center text-white text-xs font-semibold">
+                <div className="mx-auto size-11 rounded-2xl bg-gradient-to-br from-[var(--orbe-blue)] to-[var(--orbe-cyan)] flex items-center justify-center text-white text-xs font-semibold shadow-[var(--shadow-soft)]">
                   {p.name.replace("orbe", "")}
                 </div>
                 <div className="mt-3 text-sm font-medium">{p.name}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{p.tagline}</div>
+                <div className="text-xs text-muted-foreground mt-0.5 text-pretty">{p.tagline}</div>
               </div>
             ))}
           </div>
@@ -148,7 +148,10 @@ function Landing() {
           </GlassCard>
           <div className="grid grid-cols-2 gap-3">
             {["Workspaces isolados", "Papéis e permissões", "Auditoria completa", "Política de memória", "Sem treino com seus dados", "Provedores intercambiáveis"].map((t) => (
-              <div key={t} className="orbe-card p-4 text-sm">{t}</div>
+              <div key={t} className="orbe-card p-4 text-sm flex items-start gap-2.5">
+                <Check className="size-4 text-[var(--success)] mt-0.5 shrink-0" />
+                <span>{t}</span>
+              </div>
             ))}
           </div>
         </div>
@@ -157,12 +160,15 @@ function Landing() {
       {/* Agents */}
       <section id="agentes" className="mx-auto max-w-7xl px-6 py-20">
         <SectionHeader eyebrow="agentes especializados" title="Um time cognitivo para cada decisão." />
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
           {["orbe strategist", "orbe dev", "orbe research", "orbe document", "orbe sales", "orbe ops", "orbe risk", "orbe gov", "orbe zen"].map((n) => (
             <GlassCard key={n}>
-              <div className="flex items-center gap-3">
-                <Bot className="size-5 text-[var(--orbe-blue)]" />
-                <span className="font-medium">{n}</span>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <IconBadge icon={Bot} size="sm" />
+                  <span className="font-medium">{n}</span>
+                </div>
+                <StatusDot tone="success" pulse={false} />
               </div>
             </GlassCard>
           ))}

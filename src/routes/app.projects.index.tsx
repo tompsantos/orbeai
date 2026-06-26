@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { ProjectDialog } from "@/components/projects/ProjectDialog";
 import { projectService } from "@/lib/api";
 import type { Project } from "@/types";
-import { Filter, Folders, Plus, Search } from "lucide-react";
+import { ArrowUpRight, Filter, Folders, Plus, Search } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -54,32 +54,33 @@ function ProjectsIndex() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((p) => (
-            <Link key={p.id} to="/app/projects/$id" params={{ id: p.id }} className="orbe-card orbe-card-hover p-5 block">
+            <Link key={p.id} to="/app/projects/$id" params={{ id: p.id }} className="group orbe-card orbe-card-hover p-5 block">
               <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="size-9 rounded-lg bg-gradient-to-br from-[var(--orbe-blue)] to-[var(--orbe-cyan)] flex items-center justify-center"><Folders className="size-4 text-white" /></div>
-                  <div>
-                    <div className="font-medium">{p.name}</div>
-                    <div className="text-[11px] text-muted-foreground">{p.product ?? "sem produto"}</div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-9 rounded-xl bg-gradient-to-br from-[var(--orbe-blue)] to-[var(--orbe-cyan)] flex items-center justify-center shrink-0 shadow-[var(--shadow-soft)]"><Folders className="size-4 text-white" /></div>
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{p.name}</div>
+                    <div className="text-[11px] text-muted-foreground truncate">{p.product ?? "sem produto"}</div>
                   </div>
                 </div>
                 <Pill tone={p.status === "ativo" ? "success" : p.status === "rascunho" ? "muted" : "warn"}>{p.status}</Pill>
               </div>
-              <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{p.description}</p>
+              <p className="text-sm text-muted-foreground mt-3 line-clamp-2 leading-relaxed">{p.description}</p>
               <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
                 {[
                   { l: "chats", v: p.chatsCount },
                   { l: "artifacts", v: p.artifactsCount },
                   { l: "arquivos", v: p.filesCount },
                 ].map((s) => (
-                  <div key={s.l} className="rounded-md bg-muted/40 py-2">
-                    <div className="text-sm font-semibold">{s.v}</div>
+                  <div key={s.l} className="orbe-surface py-2">
+                    <div className="text-sm font-semibold tabular-nums">{s.v}</div>
                     <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.l}</div>
                   </div>
                 ))}
               </div>
-              <div className="mt-3 text-[11px] text-muted-foreground">
-                Atualizado {formatDistanceToNow(new Date(p.updatedAt), { addSuffix: true, locale: ptBR })}
+              <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>Atualizado {formatDistanceToNow(new Date(p.updatedAt), { addSuffix: true, locale: ptBR })}</span>
+                <ArrowUpRight className="size-3.5 text-muted-foreground/0 group-hover:text-[var(--orbe-blue)] transition-colors" />
               </div>
             </Link>
           ))}
