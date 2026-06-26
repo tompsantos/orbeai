@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppProjectsRouteImport } from './routes/app.projects'
+import { Route as AppMemoryRouteImport } from './routes/app.memory'
 import { Route as AppChatRouteImport } from './routes/app.chat'
 import { Route as AppArtifactsRouteImport } from './routes/app.artifacts'
 import { Route as AppAgentsRouteImport } from './routes/app.agents'
@@ -43,6 +44,11 @@ const AppResearchRoute = AppResearchRouteImport.update({
 const AppProjectsRoute = AppProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMemoryRoute = AppMemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
   getParentRoute: () => AppRoute,
 } as any)
 const AppChatRoute = AppChatRouteImport.update({
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/app/agents': typeof AppAgentsRoute
   '/app/artifacts': typeof AppArtifactsRoute
   '/app/chat': typeof AppChatRoute
+  '/app/memory': typeof AppMemoryRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
   '/app/research': typeof AppResearchRoute
   '/app/': typeof AppIndexRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/app/agents': typeof AppAgentsRoute
   '/app/artifacts': typeof AppArtifactsRoute
   '/app/chat': typeof AppChatRoute
+  '/app/memory': typeof AppMemoryRoute
   '/app/research': typeof AppResearchRoute
   '/app': typeof AppIndexRoute
   '/app/projects/$id': typeof AppProjectsIdRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/app/agents': typeof AppAgentsRoute
   '/app/artifacts': typeof AppArtifactsRoute
   '/app/chat': typeof AppChatRoute
+  '/app/memory': typeof AppMemoryRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
   '/app/research': typeof AppResearchRoute
   '/app/': typeof AppIndexRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/app/agents'
     | '/app/artifacts'
     | '/app/chat'
+    | '/app/memory'
     | '/app/projects'
     | '/app/research'
     | '/app/'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/app/agents'
     | '/app/artifacts'
     | '/app/chat'
+    | '/app/memory'
     | '/app/research'
     | '/app'
     | '/app/projects/$id'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '/app/agents'
     | '/app/artifacts'
     | '/app/chat'
+    | '/app/memory'
     | '/app/projects'
     | '/app/research'
     | '/app/'
@@ -183,6 +195,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/app/projects'
       preLoaderRoute: typeof AppProjectsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/memory': {
+      id: '/app/memory'
+      path: '/memory'
+      fullPath: '/app/memory'
+      preLoaderRoute: typeof AppMemoryRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/chat': {
@@ -241,6 +260,7 @@ interface AppRouteChildren {
   AppAgentsRoute: typeof AppAgentsRoute
   AppArtifactsRoute: typeof AppArtifactsRoute
   AppChatRoute: typeof AppChatRoute
+  AppMemoryRoute: typeof AppMemoryRoute
   AppProjectsRoute: typeof AppProjectsRouteWithChildren
   AppResearchRoute: typeof AppResearchRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -250,6 +270,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAgentsRoute: AppAgentsRoute,
   AppArtifactsRoute: AppArtifactsRoute,
   AppChatRoute: AppChatRoute,
+  AppMemoryRoute: AppMemoryRoute,
   AppProjectsRoute: AppProjectsRouteWithChildren,
   AppResearchRoute: AppResearchRoute,
   AppIndexRoute: AppIndexRoute,
