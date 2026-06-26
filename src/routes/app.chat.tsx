@@ -6,8 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { GlassCard, Pill, StatusDot } from "@/components/design-system/Primitives";
-import { mockChats, mockMessages } from "@/lib/mock/data";
-import { chatService } from "@/lib/api";
+import { chatService, memoryService, artifactService } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { OrbeMark } from "@/components/design-system/OrbeLogo";
 import type { ChatMode, Message, ModelKey } from "@/types";
@@ -34,43 +33,69 @@ const MODELS: { key: ModelKey; label: string }[] = [
 ];
 
 function ChatPage() {
-  const [activeChatId, setActiveChatId] = useState(mockChats[0].id);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string>("");
   const [mode, setMode] = useState<ChatMode>("strategist");
   const [model, setModel] = useState<ModelKey>("auto");
-  const [messages, setMessages] = useState<Message[]>(mockMessages[mockChats[0].id] ?? []);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [search, setSearch] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Load chats on mount (client only — localStore is SSR-safe but data is client data)
   useEffect(() => {
-    setMessages(mockMessages[activeChatId] ?? []);
+    void chatService.list().then((cs) => {
+      setChats(cs);
+      if (cs.length && !activeChatId) setActiveChatId(cs[0].id);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!activeChatId) return;
+    void chatService.messages(activeChatId).then(setMessages);
   }, [activeChatId]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, streaming]);
 
+  async function newChat() {
+    const chat = await chatService.create({ title: "Nova conversa", mode, model });
+    const list = await chatService.list();
+    setChats(list);
+    setActiveChatId(chat.id);
+    setMessages([]);
+  }
+
   async function send() {
     const text = input.trim();
-    if (!text || streaming) return;
+    if (!text || streaming || !activeChatId) return;
     const userMsg: Message = { id: `u_${Date.now()}`, chatId: activeChatId, role: "user", content: text, createdAt: new Date().toISOString() };
     setMessages((m) => [...m, userMsg]);
+    await chatService.appendMessage(activeChatId, userMsg);
     setInput("");
     setStreaming(true);
     try {
       const { response, decision } = await chatService.send(activeChatId, text, { mode, model });
       const asst: Message = {
         id: `a_${Date.now()}`, chatId: activeChatId, role: "assistant",
-        content: response.content + `\n\n_via ${response.provider} · ${decision.reason}_`,
+        content: response.content + `\n\n_via ${response.provider} · ${decision.reason} · ${decision.qualityTier} · ~${decision.estimatedLatencyMs}ms_`,
         createdAt: new Date().toISOString(), model, mode,
       };
       setMessages((m) => [...m, asst]);
-    } catch (e: any) {
-      toast.error("Provedor indisponível", { description: e?.message ?? "Tente outro modelo." });
+      await chatService.appendMessage(activeChatId, asst);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Tente outro modelo.";
+      toast.error("Provedor indisponível", { description: msg });
     } finally {
       setStreaming(false);
     }
   }
+
+  const filteredChats = chats.filter((c) => !search || c.title.toLowerCase().includes(search.toLowerCase()));
+
 
   return (
     <div className="h-[calc(100vh-7rem)] md:h-[calc(100vh-5rem)] grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4">
