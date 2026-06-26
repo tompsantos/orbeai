@@ -9,7 +9,7 @@ import { GlassCard, Pill, StatusDot } from "@/components/design-system/Primitive
 import { chatService, memoryService, artifactService } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { OrbeMark } from "@/components/design-system/OrbeLogo";
-import type { ChatMode, Message, ModelKey } from "@/types";
+import type { Chat, ChatMode, Message, ModelKey } from "@/types";
 import {
   ArrowUp, Copy, Image as ImageIcon, Mic, Paperclip, Pin, RefreshCw, Save,
   Search, Sparkles, Square, Wand2,
@@ -103,15 +103,19 @@ function ChatPage() {
       <aside className="orbe-card p-3 hidden md:flex flex-col min-h-0">
         <div className="flex items-center justify-between mb-3 px-2">
           <div className="text-sm font-semibold">Conversas</div>
-          <Button size="sm" variant="ghost"><Sparkles className="size-3.5 mr-1" /> Nova</Button>
+          <Button size="sm" variant="ghost" onClick={newChat}><Sparkles className="size-3.5 mr-1" /> Nova</Button>
         </div>
         <div className="relative px-2 mb-2">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-          <input placeholder="Buscar…" className="w-full bg-muted/40 rounded-md pl-7 pr-2 py-1.5 text-sm outline-none focus:orbe-ring" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar…"
+            className="w-full bg-muted/40 rounded-md pl-7 pr-2 py-1.5 text-sm outline-none focus:orbe-ring" />
         </div>
         <ScrollArea className="flex-1 -mx-1 px-1">
           <ul className="space-y-1">
-            {mockChats.map((c) => (
+            {filteredChats.map((c) => (
               <li key={c.id}>
                 <button onClick={() => setActiveChatId(c.id)}
                   className={cn("w-full text-left rounded-md px-3 py-2 text-sm hover:bg-accent/60 transition-colors",
@@ -128,12 +132,13 @@ function ChatPage() {
         </ScrollArea>
       </aside>
 
+
       {/* Conversation area */}
       <section className="orbe-card flex flex-col min-h-0 overflow-hidden">
         {/* Top bar */}
         <div className="flex items-center gap-3 border-b px-4 py-3">
           <OrbeMark size={22} />
-          <div className="text-sm font-medium">{mockChats.find((c) => c.id === activeChatId)?.title}</div>
+          <div className="text-sm font-medium">{chats.find((c) => c.id === activeChatId)?.title ?? "Selecione uma conversa"}</div>
           <Pill tone="blue">orbe {mode}</Pill>
           <div className="ml-auto flex items-center gap-2">
             <Select value={mode} onValueChange={(v) => setMode(v as ChatMode)}>
