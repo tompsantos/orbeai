@@ -21,6 +21,7 @@ import { Route as AppIntegrationsRouteImport } from './routes/app.integrations'
 import { Route as AppChatRouteImport } from './routes/app.chat'
 import { Route as AppArtifactsRouteImport } from './routes/app.artifacts'
 import { Route as AppAgentsRouteImport } from './routes/app.agents'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppProjectsIndexRouteImport } from './routes/app.projects.index'
 import { Route as AppProjectsIdRouteImport } from './routes/app.projects.$id'
 
@@ -84,6 +85,11 @@ const AppAgentsRoute = AppAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProjectsIndexRoute = AppProjectsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -98,6 +104,7 @@ const AppProjectsIdRoute = AppProjectsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/admin': typeof AppAdminRoute
   '/app/agents': typeof AppAgentsRoute
   '/app/artifacts': typeof AppArtifactsRoute
   '/app/chat': typeof AppChatRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/agents': typeof AppAgentsRoute
   '/app/artifacts': typeof AppArtifactsRoute
   '/app/chat': typeof AppChatRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/admin': typeof AppAdminRoute
   '/app/agents': typeof AppAgentsRoute
   '/app/artifacts': typeof AppArtifactsRoute
   '/app/chat': typeof AppChatRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/app/admin'
     | '/app/agents'
     | '/app/artifacts'
     | '/app/chat'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app/admin'
     | '/app/agents'
     | '/app/artifacts'
     | '/app/chat'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/app/admin'
     | '/app/agents'
     | '/app/artifacts'
     | '/app/chat'
@@ -282,6 +294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAgentsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/projects/': {
       id: '/app/projects/'
       path: '/'
@@ -314,6 +333,7 @@ const AppProjectsRouteWithChildren = AppProjectsRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppAgentsRoute: typeof AppAgentsRoute
   AppArtifactsRoute: typeof AppArtifactsRoute
   AppChatRoute: typeof AppChatRoute
@@ -327,6 +347,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppAgentsRoute: AppAgentsRoute,
   AppArtifactsRoute: AppArtifactsRoute,
   AppChatRoute: AppChatRoute,
