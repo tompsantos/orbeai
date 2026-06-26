@@ -2,16 +2,8 @@ import type { ChatMode, ModelKey, ProviderSlug, RoutingMode } from "@/types";
 import { providersBySlug, type AIRequest, type AIResponse } from "@/lib/ai/providers";
 
 export type TaskHint =
-  | "código"
-  | "documento"
-  | "pesquisa"
-  | "estratégia"
-  | "criatividade"
-  | "risco"
-  | "multimodal"
-  | "ops"
-  | "governo"
-  | "vendas";
+  | "código" | "documento" | "pesquisa" | "estratégia" | "criatividade"
+  | "risco" | "multimodal" | "ops" | "governo" | "vendas";
 
 export type QualityTier = "essencial" | "padrão" | "premium" | "flagship";
 
@@ -41,11 +33,9 @@ const MODEL_TO_PROVIDER: Record<Exclude<ModelKey, "auto">, ProviderSlug> = {
 const PROVIDER_LATENCY: Record<ProviderSlug, number> = {
   openai: 1400, anthropic: 1600, gemini: 1300, qwen: 1100, groq: 380, local: 900, mock: 720,
 };
-
 const PROVIDER_COST: Record<ProviderSlug, number> = {
   openai: 0.005, anthropic: 0.006, gemini: 0.004, qwen: 0.002, groq: 0.0005, local: 0, mock: 0,
 };
-
 const PROVIDER_QUALITY: Record<ProviderSlug, QualityTier> = {
   openai: "premium", anthropic: "flagship", gemini: "premium",
   qwen: "padrão", groq: "essencial", local: "essencial", mock: "padrão",
@@ -67,6 +57,11 @@ const HINT_PATTERNS: Array<{ hint: TaskHint; regex: RegExp }> = [
 function detectHints(prompt?: string): TaskHint[] {
   if (!prompt) return [];
   return HINT_PATTERNS.filter((p) => p.regex.test(prompt)).map((p) => p.hint);
+}
+
+function buildFallback(primary: ProviderSlug): ProviderSlug[] {
+  const order: ProviderSlug[] = ["anthropic", "openai", "gemini", "groq", "mock"];
+  return order.filter((p) => p !== primary);
 }
 
 export function resolveRoute(opts: {
@@ -104,13 +99,11 @@ export function resolveRoute(opts: {
     reason = `Modo orbe ${mode} → provedor ideal`;
   }
 
-  const fallbackChain: ProviderSlug[] = Array.from(new Set([provider === "mock" ? "mock" : "mock"])) as ProviderSlug[];
-
   return {
     provider,
     model: providersBySlug[provider].slug,
     reason,
-    fallbackChain,
+    fallbackChain: buildFallback(provider),
     routingMode: effectiveRouting,
     estimatedLatencyMs: PROVIDER_LATENCY[provider],
     estimatedCostUsd: PROVIDER_COST[provider],
@@ -121,7 +114,10 @@ export function resolveRoute(opts: {
 }
 
 export async function runWithFallback(decision: RouterDecision, req: AIRequest): Promise<AIResponse> {
-  const order: ProviderSlug[] = [decision.provider, ...decision.fallbackChain];
+  const seen = new Set<ProviderSlug>();
+  const order: ProviderSlug[] = [decision.provider, ...decision.fallbackChain].filter((s) => {
+    if (seen.has(s)) return false; seen.add(s); return true;
+  });
   let lastError: unknown;
   for (const slug of order) {
     const p = providersBySlug[slug];
