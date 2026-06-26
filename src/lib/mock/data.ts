@@ -206,9 +206,9 @@ export const mockResearch: ResearchReport[] = [
 ];
 
 export const mockAudit: AuditLog[] = [
-  { id: "al_1", actor: "Caio Almeida", action: "criou projeto", target: "orbeAI Core", at: "2026-06-25T14:20:00Z", level: "info" },
+  { id: "al_1", actor: "orbeOne Admin", action: "criou projeto", target: "orbeAI Core", at: "2026-06-25T14:20:00Z", level: "info" },
   { id: "al_2", actor: "system", action: "fallback acionado", target: "openai → anthropic", at: "2026-06-25T13:11:00Z", level: "warn" },
-  { id: "al_3", actor: "Caio Almeida", action: "removeu memória sensível", target: "mem_old_42", at: "2026-06-24T22:00:00Z", level: "info" },
+  { id: "al_3", actor: "orbeOne Admin", action: "removeu memória sensível", target: "mem_old_42", at: "2026-06-24T22:00:00Z", level: "info" },
   { id: "al_4", actor: "agent:orbe-research", action: "iniciou pesquisa", target: "concorrentes LATAM", at: "2026-06-24T15:10:00Z", level: "info" },
   { id: "al_5", actor: "system", action: "erro de provedor", target: "qwen timeout", at: "2026-06-23T10:02:00Z", level: "error" },
 ];
