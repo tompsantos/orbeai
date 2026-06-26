@@ -3,9 +3,10 @@ import { Link } from "@tanstack/react-router";
 import type { Artifact, Chat, MemoryItem } from "@/types";
 import type { RouterDecision } from "@/lib/ai/router";
 import { Brain, FileSearch, FolderOpen, Network, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function ChatContextPanel({
-  chat, decision, projectName, projectId, artifacts, memories, memoryScope,
+  chat, decision, projectName, projectId, artifacts, memories, memoryScope, layout = "column",
 }: {
   chat?: Chat | null;
   decision?: RouterDecision | null;
@@ -14,9 +15,17 @@ export function ChatContextPanel({
   artifacts: Artifact[];
   memories: MemoryItem[];
   memoryScope: string;
+  layout?: "column" | "grid";
 }) {
   return (
-    <div className="flex flex-col gap-3 text-sm h-full overflow-y-auto pr-1">
+    <div
+      className={cn(
+        "text-sm",
+        layout === "grid"
+          ? "grid gap-3 md:grid-cols-2 2xl:grid-cols-3"
+          : "flex h-full flex-col gap-3 overflow-y-auto pr-1",
+      )}
+    >
       <Section title="Conversa">
         <div className="font-medium truncate">{chat?.title ?? "—"}</div>
         <div className="mt-1 flex flex-wrap gap-1.5">
