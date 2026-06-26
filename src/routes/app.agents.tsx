@@ -18,7 +18,7 @@ function AgentsPage() {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {mockAgents.map((a) => (
-          <GlassCard key={a.id} className="orbe-card-hover flex flex-col">
+          <GlassCard key={a.slug} className="orbe-card-hover flex flex-col">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="size-10 rounded-xl bg-gradient-to-br from-[var(--orbe-blue)] to-[var(--orbe-cyan)] flex items-center justify-center">
