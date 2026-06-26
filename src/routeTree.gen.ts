@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppProjectsRouteImport } from './routes/app.projects'
 import { Route as AppChatRouteImport } from './routes/app.chat'
 import { Route as AppArtifactsRouteImport } from './routes/app.artifacts'
@@ -31,6 +32,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppResearchRoute = AppResearchRouteImport.update({
+  id: '/research',
+  path: '/research',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProjectsRoute = AppProjectsRouteImport.update({
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/app/artifacts': typeof AppArtifactsRoute
   '/app/chat': typeof AppChatRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
+  '/app/research': typeof AppResearchRoute
   '/app/': typeof AppIndexRoute
   '/app/projects/$id': typeof AppProjectsIdRoute
   '/app/projects/': typeof AppProjectsIndexRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app/artifacts': typeof AppArtifactsRoute
   '/app/chat': typeof AppChatRoute
+  '/app/research': typeof AppResearchRoute
   '/app': typeof AppIndexRoute
   '/app/projects/$id': typeof AppProjectsIdRoute
   '/app/projects': typeof AppProjectsIndexRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/app/artifacts': typeof AppArtifactsRoute
   '/app/chat': typeof AppChatRoute
   '/app/projects': typeof AppProjectsRouteWithChildren
+  '/app/research': typeof AppResearchRoute
   '/app/': typeof AppIndexRoute
   '/app/projects/$id': typeof AppProjectsIdRoute
   '/app/projects/': typeof AppProjectsIndexRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/app/artifacts'
     | '/app/chat'
     | '/app/projects'
+    | '/app/research'
     | '/app/'
     | '/app/projects/$id'
     | '/app/projects/'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app/artifacts'
     | '/app/chat'
+    | '/app/research'
     | '/app'
     | '/app/projects/$id'
     | '/app/projects'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/app/artifacts'
     | '/app/chat'
     | '/app/projects'
+    | '/app/research'
     | '/app/'
     | '/app/projects/$id'
     | '/app/projects/'
@@ -145,6 +157,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/research': {
+      id: '/app/research'
+      path: '/research'
+      fullPath: '/app/research'
+      preLoaderRoute: typeof AppResearchRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/projects': {
@@ -203,6 +222,7 @@ interface AppRouteChildren {
   AppArtifactsRoute: typeof AppArtifactsRoute
   AppChatRoute: typeof AppChatRoute
   AppProjectsRoute: typeof AppProjectsRouteWithChildren
+  AppResearchRoute: typeof AppResearchRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -210,6 +230,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppArtifactsRoute: AppArtifactsRoute,
   AppChatRoute: AppChatRoute,
   AppProjectsRoute: AppProjectsRouteWithChildren,
+  AppResearchRoute: AppResearchRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
