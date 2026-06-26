@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GlassCard, Pill, SectionHeader } from "@/components/design-system/Primitives";
-import { OrbeLogo } from "@/components/design-system/OrbeLogo";
+import { OrbeMark } from "@/components/design-system/OrbeLogo";
 import { orbeProducts } from "@/lib/mock/data";
 import { Sparkles } from "lucide-react";
 
@@ -18,7 +18,7 @@ function OrbeOnePage() {
       <section className="relative orbe-glass rounded-3xl p-10 overflow-hidden">
         <div className="absolute -top-24 -right-24 size-72 rounded-full bg-gradient-to-br from-[var(--orbe-blue)]/30 to-[var(--orbe-cyan)]/10 blur-3xl" />
         <div className="relative flex flex-col items-center text-center">
-          <OrbeLogo size={64} />
+          <OrbeMark size={64} />
           <h2 className="mt-4 text-2xl font-semibold">orbeAI</h2>
           <p className="text-sm text-muted-foreground max-w-xl mt-2">
             Conecta inteligência, memória, agentes e automação aos produtos do ecossistema orbeOne.
