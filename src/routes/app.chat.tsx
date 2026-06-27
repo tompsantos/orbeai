@@ -240,7 +240,7 @@ function ChatPage() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-[292px_minmax(0,1fr)] gap-3 min-h-[620px] md:h-[calc(100vh-8rem)]">
+      <div className="grid grid-cols-1 md:grid-cols-[300px_minmax(0,1fr)] gap-3 min-h-[620px] md:h-[calc(100vh-8rem)]">
         {/* Conversation list */}
         <aside className="orbe-card p-3 hidden md:flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-3 px-1">
@@ -260,9 +260,9 @@ function ChatPage() {
               {filteredChats.map((c) => {
                 const active = activeChatId === c.id;
                 return (
-                <li key={c.id} className="flex items-stretch gap-1 min-w-0">
+                <li key={c.id} className="relative min-w-0">
                   <button onClick={() => setActiveChatId(c.id)} title={c.title}
-                    className={cn("min-w-0 max-w-full flex-1 overflow-hidden text-left rounded-lg px-2.5 py-2 transition-colors border",
+                    className={cn("min-w-0 w-full overflow-hidden text-left rounded-lg border px-2.5 py-2 pr-11 transition-colors",
                       active
                         ? "orbe-active"
                         : "border-transparent hover:bg-[var(--sidebar-accent)]")}>
@@ -270,11 +270,11 @@ function ChatPage() {
                       {c.pinned
                         ? <Pin className="size-3 shrink-0 text-[var(--orbe-blue)] fill-[var(--orbe-blue)]" />
                         : <MessageSquare className={cn("size-3 shrink-0", active ? "text-[var(--orbe-blue)]" : "text-muted-foreground")} />}
-                      <span className={cn("block min-w-0 max-w-[205px] truncate text-sm", active ? "font-medium" : "")}>{compactChatTitle(c.title)}</span>
+                      <span className={cn("block min-w-0 max-w-[178px] truncate text-sm", active ? "font-medium" : "")}>{compactChatTitle(c.title)}</span>
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5 pl-5 min-w-0">
+                    <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5 pl-5 min-w-0 overflow-hidden">
                       <span className="min-w-0 truncate">orbe {c.mode}</span>
-                      <span className="text-muted-foreground/40">·</span>
+                      <span className="shrink-0 text-muted-foreground/40">·</span>
                       <span className="shrink-0">{formatDistanceToNow(new Date(c.updatedAt), { addSuffix: true, locale: ptBR })}</span>
                     </div>
                   </button>
@@ -284,7 +284,7 @@ function ChatPage() {
                       event.stopPropagation();
                       void deleteChat(c.id);
                     }}
-                    className="mt-1 h-10 w-8 shrink-0 rounded-lg border border-border/60 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    className="absolute right-1 top-1 h-8 w-8 rounded-lg border border-border/60 bg-card/80 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                     title="Apagar conversa"
                     aria-label="Apagar conversa"
                   >
