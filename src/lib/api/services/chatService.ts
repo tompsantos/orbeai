@@ -260,6 +260,25 @@ export const chatService = {
     }
   },
 
+  async remove(chatId: string): Promise<void> {
+    if (!apiClient.isMock) {
+      await apiClient.request<void>(`/v1/chats/${chatId}`, {
+        method: "DELETE",
+      });
+
+      return;
+    }
+
+    const chats = allChats().filter((c) => c.id !== chatId);
+    saveChats(chats);
+
+    const map = allMessages();
+    delete map[chatId];
+    saveMessages(map);
+
+    auditService.log({ action: "chat.delete", target: chatId, level: "warn" });
+  },
+
   async togglePin(chatId: string, messageId: string) {
     if (!apiClient.isMock) {
       return;

@@ -12,7 +12,7 @@ import type {
   ProviderUsageSummary,
   RoutingMode,
 } from "@/types";
-import { Activity, AlertTriangle, BarChart3, Clock, Cpu, KeyRound, Route as RouteIcon, Zap } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, Clock, Cpu, KeyRound, RefreshCw, Route as RouteIcon, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +36,17 @@ function formatDate(value?: string) {
 }
 
 function formatCost(value: number) {
+  if (!Number.isFinite(value) || value === 0) return "US$ 0.000000";
+  if (Math.abs(value) < 0.01) return `US$ ${value.toFixed(6)}`;
+
   return `US$ ${value.toFixed(4)}`;
+}
+
+function formatCostPerK(value?: number) {
+  if (!value) return "$0.000000/1k";
+  if (Math.abs(value) < 0.01) return `$${value.toFixed(6)}/1k`;
+
+  return `$${value.toFixed(4)}/1k`;
 }
 
 function ModelsPage() {
@@ -94,8 +104,14 @@ function ModelsPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeader eyebrow="model router" title="Roteamento inteligente de modelos"
-        description="orbeRouter escolhe o melhor provedor por tarefa, custo, latência e disponibilidade." />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <SectionHeader eyebrow="model router" title="Roteamento inteligente de modelos"
+          description="orbeRouter escolhe o melhor provedor por tarefa, custo, latência e disponibilidade." />
+        <Button variant="outline" size="sm" onClick={() => void refresh()}>
+          <RefreshCw className="size-3.5 mr-1.5" />
+          Atualizar métricas
+        </Button>
+      </div>
 
       <GlassCard hoverable={false} className="border-[color-mix(in_oklch,var(--orbe-blue)_28%,var(--border))] bg-[color-mix(in_oklch,var(--orbe-blue)_6%,var(--card))]">
         <div className="flex items-start gap-3 text-sm">
@@ -185,7 +201,7 @@ function ModelsPage() {
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
               <div className="orbe-surface p-2 tabular-nums"><Activity className="inline size-3 mr-1 text-muted-foreground" /> {p.latencyMs ?? "—"} ms</div>
-              <div className="orbe-surface p-2 tabular-nums"><Zap className="inline size-3 mr-1 text-muted-foreground" /> ${p.costPerKTokens?.toFixed(3) ?? "0.000"}/1k</div>
+              <div className="orbe-surface p-2 tabular-nums"><Zap className="inline size-3 mr-1 text-muted-foreground" /> {formatCostPerK(p.costPerKTokens)}</div>
             </div>
             <div className="mt-3">
               <div className="orbe-eyebrow mb-1.5">Modelos</div>

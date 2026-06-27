@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models import Chat, Project
+from app.models import Chat, Message, ModelRun, Project
 from app.schemas.chats import ChatCreate, ChatRead, ChatUpdate
 from app.services.bootstrap import get_or_create_default_workspace
 
@@ -112,3 +112,21 @@ def update_chat(
     db.refresh(chat)
 
     return chat
+
+
+@router.delete("/{chat_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_chat(chat_id: str, db: Session = Depends(get_db)) -> None:
+    chat = db.get(Chat, chat_id)
+
+    if chat is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat not found",
+        )
+
+    db.execute(delete(ModelRun).where(ModelRun.chat_id == chat_id))
+    db.execute(delete(Message).where(Message.chat_id == chat_id))
+    db.delete(chat)
+    db.commit()
+
+    return None

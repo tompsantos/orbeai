@@ -20,6 +20,10 @@ def key_status(has_key: bool) -> str:
     return "não configurado"
 
 
+def average_price_per_k(input_price_per_m: float, output_price_per_m: float) -> float:
+    return round(((input_price_per_m + output_price_per_m) / 2) / 1000, 6)
+
+
 @router.get("", response_model=list[ModelProviderRead])
 def list_model_providers() -> list[ModelProviderRead]:
     settings = get_settings()
@@ -44,7 +48,10 @@ def list_model_providers() -> list[ModelProviderRead]:
             models=[settings.openai_model],
             api_key_status=key_status(openai_has_key),
             latency_ms=None,
-            cost_per_k_tokens=None,
+            cost_per_k_tokens=average_price_per_k(
+                settings.openai_input_price_per_m_tokens,
+                settings.openai_output_price_per_m_tokens,
+            ),
         ),
         ModelProviderRead(
             slug="gemini",
@@ -53,7 +60,10 @@ def list_model_providers() -> list[ModelProviderRead]:
             models=[settings.gemini_model],
             api_key_status=key_status(gemini_has_key),
             latency_ms=None,
-            cost_per_k_tokens=None,
+            cost_per_k_tokens=average_price_per_k(
+                settings.gemini_input_price_per_m_tokens,
+                settings.gemini_output_price_per_m_tokens,
+            ),
         ),
         ModelProviderRead(
             slug="anthropic",
