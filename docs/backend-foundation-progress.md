@@ -155,3 +155,24 @@ Próximo passo técnico:
 - persistir dados no Postgres;
 - manter provider de IA em modo mock até o fluxo de dados estar estável;
 - depois conectar o orbeRouter aos provedores reais.
+
+---
+
+## atualização: endpoints de projects
+
+A fase 2.1 criou os primeiros endpoints reais de dados da orbeAI.
+
+Status validado:
+
+- POST /v1/projects cria projeto no Postgres.
+- GET /v1/projects lista projetos salvos.
+- GET /v1/projects/{project_id} busca projeto por id.
+- PATCH /v1/projects/{project_id} atualiza projeto existente.
+- Testes passaram usando DATABASE_URL apontando para Postgres real via Docker.
+- Commit aplicado: 8007e07 add projects api endpoints.
+
+Observação técnica:
+
+- O workspace padrão orbeone é criado automaticamente enquanto a autenticação real ainda não existe.
+- Esse bootstrap é temporário até a fase de auth/workspaces.
+- O backend segue usando Postgres desde o início, sem SQLite.
