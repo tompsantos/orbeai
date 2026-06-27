@@ -102,7 +102,7 @@ Status atual da fase 1:
 - [x] testes Python passando
 - [~] migration inicial criada
 - [ ] migration validada em SQL offline
-- [ ] migration aplicada em Postgres real
+- [x] migration aplicada em Postgres real
 
 Tabelas cobertas pela primeira migration:
 
@@ -132,3 +132,26 @@ Próximo passo depois da validação:
 - manter provider mock por enquanto;
 - só depois plugar modelo externo real.
 
+
+
+---
+
+## validação em Postgres real
+
+A migration inicial foi aplicada com sucesso em um banco Postgres rodando via Docker no Codespaces.
+
+Resultado validado:
+
+- API /health respondeu com sucesso.
+- API /v1/status respondeu com sucesso.
+- Alembic executou upgrade head usando DATABASE_URL apontando para Postgres.
+- Revision aplicada: 20260627_0001.
+- Ambiente usado para validação: Docker Compose local do projeto.
+- Objetivo: manter o mesmo caminho técnico previsto para Audaks, sem adaptação para SQLite.
+
+Próximo passo técnico:
+
+- criar endpoints reais para projects, chats e messages;
+- persistir dados no Postgres;
+- manter provider de IA em modo mock até o fluxo de dados estar estável;
+- depois conectar o orbeRouter aos provedores reais.
