@@ -20,7 +20,7 @@ Criar a fundação real de autenticação, usuários, sessões e memberships da 
 - [x] 4.3 criar schemas e services de auth
 - [x] 4.4 criar endpoints register/login/me/logout
 - [x] 4.5 proteger rotas principais
-- [ ] 4.6 migrar runtime para current_user/current_workspace
+- [x] 4.6 migrar runtime para current_user/current_workspace
 - [ ] 4.7 integrar frontend com sessão real
 - [ ] 4.8 criar telas de login/cadastro
 - [ ] 4.9 testar e revisar
@@ -198,4 +198,38 @@ Observação:
 
 - Nesta etapa, as rotas exigem autenticação, mas ainda usam o workspace padrão internamente.
 - A migração real para current_user/current_workspace fica para a etapa 4.6.
+
+
+---
+
+## atualização: current user e current workspace
+
+A etapa 4.6 iniciou a migração da API para usar o usuário e o workspace autenticados.
+
+Arquivos adicionados:
+
+- app/dependencies/workspace.py
+
+Rotas migradas:
+
+- GET /v1/workspace
+- PATCH /v1/workspace
+- PATCH /v1/workspace/settings
+- CRUD de /v1/projects
+- POST /v1/chat/send
+
+Comportamento validado:
+
+- Workspace é resolvido pela membership ativa do usuário autenticado.
+- Projects são criados dentro do current_workspace.
+- Projects de outro workspace não ficam visíveis pelo endpoint de project.
+- Chat runtime cria/reusa chat dentro do current_workspace.
+- Mensagem do usuário recebe metadata de auth_user_id e auth_workspace_id.
+- Testes antigos seguem com override temporário.
+- Testes novos usam auth real com token Bearer.
+
+Observação:
+
+- A migração completa de todos os recursos para escopo por workspace segue nas próximas etapas.
+- Nesta etapa, o foco foi workspace, projects e chat runtime.
 

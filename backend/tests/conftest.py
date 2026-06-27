@@ -7,8 +7,9 @@ from sqlalchemy import select
 
 from app.db.session import SessionLocal
 from app.dependencies.auth import AuthContext, get_current_auth_context
+from app.dependencies.workspace import CurrentWorkspaceContext, get_current_workspace_context
 from app.main import app
-from app.models import AuthSession, FeatureFlag, User
+from app.models import AuthSession, FeatureFlag, User, WorkspaceMember
 from app.services.bootstrap import get_or_create_default_workspace
 from app.services.feature_flags import ensure_default_flags
 from app.services.workspace_settings import get_or_create_workspace_settings
@@ -67,6 +68,7 @@ def reset_runtime_state() -> None:
 AUTH_REAL_TEST_FILES = {
     "test_auth_api.py",
     "test_auth_route_protection_api.py",
+    "test_current_workspace_context_api.py",
 }
 
 
@@ -105,18 +107,49 @@ def fake_auth_context() -> AuthContext:
     return AuthContext(user=user, session=session)
 
 
+def fake_workspace_context() -> CurrentWorkspaceContext:
+    db = SessionLocal()
+
+    try:
+        workspace = get_or_create_default_workspace(db)
+        auth = fake_auth_context()
+        now = __import__("app.models.core", fromlist=["utc_now"]).utc_now()
+
+        membership = WorkspaceMember(
+            id="wm_pytest_auth",
+            workspace_id=workspace.id,
+            user_id=auth.user.id,
+            role="owner",
+            status="active",
+            created_at=now,
+            updated_at=now,
+        )
+
+        return CurrentWorkspaceContext(
+            auth=auth,
+            workspace=workspace,
+            membership=membership,
+        )
+    finally:
+        db.close()
+
+
 @pytest.fixture(autouse=True)
 def auth_dependency_override(request: pytest.FixtureRequest) -> Generator[None, None, None]:
     if should_use_real_auth(request.node):
+        app.dependency_overrides.pop(get_current_workspace_context, None)
         app.dependency_overrides.pop(get_current_auth_context, None)
         yield
+        app.dependency_overrides.pop(get_current_workspace_context, None)
         app.dependency_overrides.pop(get_current_auth_context, None)
         return
 
     app.dependency_overrides[get_current_auth_context] = fake_auth_context
+    app.dependency_overrides[get_current_workspace_context] = fake_workspace_context
 
     yield
 
+    app.dependency_overrides.pop(get_current_workspace_context, None)
     app.dependency_overrides.pop(get_current_auth_context, None)
 
 
