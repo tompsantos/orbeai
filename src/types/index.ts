@@ -103,6 +103,12 @@ export interface Message {
   content: string;
   createdAt: string;
   model?: ModelKey;
+  provider?: ProviderSlug;
+  providerName?: string;
+  modelName?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  modelRunId?: string;
   mode?: ChatMode;
   attachments?: Attachment[];
   pinned?: boolean;
@@ -147,6 +153,11 @@ export interface MemoryItem {
   lastUsed: string;
   status: "ativa" | "pendente" | "arquivada";
   projectId?: ID;
+  sensitivity?: "normal" | "sensível" | string;
+  sourceProduct?: string;
+  sourceEntityId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Agent {
@@ -178,6 +189,36 @@ export interface ModelProvider {
   apiKeyStatus: "configurado" | "não configurado" | "ambiente";
   latencyMs?: number;
   costPerKTokens?: number;
+}
+
+export interface ModelRun {
+  id: ID;
+  chatId?: ID;
+  messageId?: ID;
+  provider: ProviderSlug;
+  providerName: string;
+  modelName: string;
+  taskType?: string;
+  status: string;
+  latencyMs?: number;
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostUsd: number;
+  routerReason?: string;
+  fallbackChain: string[];
+  errorMessage?: string;
+  createdAt: string;
+}
+
+export interface ProviderUsageSummary {
+  provider: ProviderSlug;
+  providerName: string;
+  requests: number;
+  tokens: number;
+  costUsd: number;
+  avgLatencyMs: number;
+  errors: number;
+  lastRunAt?: string;
 }
 
 export interface ModelConfig {
@@ -231,6 +272,10 @@ export interface AuditLog {
   target: string;
   at: string;
   level: "info" | "warn" | "error";
+  product?: string;
+  resourceType?: string;
+  resourceId?: string;
+  meta?: Record<string, unknown>;
 }
 
 export interface UsageMetric {
@@ -247,3 +292,30 @@ export interface FeatureFlag {
   enabled: boolean;
   audience: "todos" | "interno" | "beta";
 }
+
+export interface WorkspaceSettings {
+  id: ID;
+  workspaceId: ID;
+  locale: string;
+  timezone: string;
+  defaultChatMode: string;
+  defaultModelPreference: string;
+  memoryPolicy: string;
+  dataRetentionDays: number;
+  allowExports: boolean;
+  allowPublicSharing: boolean;
+  meta?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkspaceInfo {
+  id: ID;
+  name: string;
+  slug: string;
+  plan: string;
+  createdAt: string;
+  updatedAt: string;
+  settings: WorkspaceSettings;
+}
+

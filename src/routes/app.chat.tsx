@@ -16,7 +16,7 @@ import { CompareModelsDialog } from "@/components/chat/CompareModelsDialog";
 import type { Artifact, Attachment, Chat, ChatMode, MemoryItem, Message, ModelKey, Project } from "@/types";
 import type { RouterDecision } from "@/lib/ai/router";
 import {
-  ArrowUp, Image as ImageIcon, MessageSquare, Mic, Paperclip, Pin,
+  ArrowUp, Image as ImageIcon, MessageSquare, Mic, Paperclip, Pin, Trash2,
   Search, Sparkles, Square, X,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -42,6 +42,15 @@ const MODELS: { key: ModelKey; label: string }[] = [
   { key: "qwen", label: "Qwen" }, { key: "groq", label: "Groq" }, { key: "local", label: "Local" },
 ];
 
+
+function compactChatTitle(title: string, limit = 42): string {
+  const clean = title.trim().replace(/\s+/g, " ");
+
+  if (clean.length <= limit) return clean;
+
+  return `${clean.slice(0, limit - 1).trim()}…`;
+}
+
 function ChatPage() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string>("");
@@ -53,6 +62,7 @@ function ChatPage() {
   const [search, setSearch] = useState("");
   const [pendingAttachment, setPendingAttachment] = useState<Attachment | null>(null);
   const [lastDecision, setLastDecision] = useState<RouterDecision | null>(null);
+  const [memoryNotice, setMemoryNotice] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [memories, setMemories] = useState<MemoryItem[]>([]);
@@ -93,6 +103,31 @@ function ChatPage() {
     setActiveChatId(chat.id);
     setMessages([]);
     setLastDecision(null);
+    setMemoryNotice(null);
+  }
+
+  async function deleteChat(chatId: string) {
+    const ok = window.confirm("Apagar esta conversa? Esta ação não pode ser desfeita.");
+    if (!ok) return;
+
+    try {
+      await chatService.remove(chatId);
+
+      const nextChats = await chatService.list();
+      setChats(nextChats);
+
+      if (activeChatId === chatId) {
+        const nextActive = nextChats[0]?.id ?? "";
+        setActiveChatId(nextActive);
+        setMessages(nextActive ? await chatService.messages(nextActive) : []);
+        setLastDecision(null);
+      }
+
+      toast.success("Conversa apagada");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Não foi possível apagar a conversa.";
+      toast.error("Erro ao apagar conversa", { description: message });
+    }
   }
 
   function addAttachment() {
@@ -105,15 +140,34 @@ function ChatPage() {
     if (!activeChatId) return;
     setStreaming(true);
     try {
-      const { response, decision } = await chatService.send(activeChatId, text, { mode, model });
+      const { response, decision, assistantMessage, memoryEvents } = await chatService.send(activeChatId, text, { mode, model });
       setLastDecision(decision);
-      const asst: Message = {
-        id: `a_${Date.now()}`, chatId: activeChatId, role: "assistant",
+
+      if (memoryEvents.length > 0) {
+        const firstMemory = memoryEvents[0];
+        setMemoryNotice(`memória atualizada: ${firstMemory.label}`);
+        window.setTimeout(() => setMemoryNotice(null), 5500);
+      }
+
+      const asst: Message = assistantMessage ?? {
+        id: `a_${Date.now()}`,
+        chatId: activeChatId,
+        role: "assistant",
         content: response.content,
-        createdAt: new Date().toISOString(), model, mode,
+        createdAt: new Date().toISOString(),
+        model,
+        mode,
+        provider: response.provider,
+        providerName: response.provider,
+        modelName: response.model,
       };
+
       setMessages((m) => [...m, asst]);
       await chatService.appendMessage(activeChatId, asst);
+
+      const syncedMessages = await chatService.messages(activeChatId);
+      setMessages(syncedMessages);
+      setChats(await chatService.list());
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Tente outro modelo.";
       toast.error("Provedor indisponível", { description: msg });
@@ -186,7 +240,7 @@ function ChatPage() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-[260px_minmax(0,1fr)] gap-4 min-h-[620px] md:h-[calc(100vh-8rem)]">
+      <div className="grid grid-cols-1 md:grid-cols-[300px_minmax(0,1fr)] gap-3 min-h-[620px] md:h-[calc(100vh-8rem)]">
         {/* Conversation list */}
         <aside className="orbe-card p-3 hidden md:flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-3 px-1">
@@ -206,23 +260,35 @@ function ChatPage() {
               {filteredChats.map((c) => {
                 const active = activeChatId === c.id;
                 return (
-                <li key={c.id}>
-                  <button onClick={() => setActiveChatId(c.id)}
-                    className={cn("group w-full text-left rounded-lg px-2.5 py-2 transition-colors border",
+                <li key={c.id} className="relative min-w-0">
+                  <button onClick={() => setActiveChatId(c.id)} title={c.title}
+                    className={cn("min-w-0 w-full overflow-hidden text-left rounded-lg border px-2.5 py-2 pr-11 transition-colors",
                       active
                         ? "orbe-active"
                         : "border-transparent hover:bg-[var(--sidebar-accent)]")}>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       {c.pinned
                         ? <Pin className="size-3 shrink-0 text-[var(--orbe-blue)] fill-[var(--orbe-blue)]" />
                         : <MessageSquare className={cn("size-3 shrink-0", active ? "text-[var(--orbe-blue)]" : "text-muted-foreground")} />}
-                      <span className={cn("truncate text-sm", active ? "font-medium" : "")}>{c.title}</span>
+                      <span className={cn("block min-w-0 max-w-[178px] truncate text-sm", active ? "font-medium" : "")}>{compactChatTitle(c.title)}</span>
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5 pl-5">
-                      <span className="truncate">orbe {c.mode}</span>
-                      <span className="text-muted-foreground/40">·</span>
+                    <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5 pl-5 min-w-0 overflow-hidden">
+                      <span className="min-w-0 truncate">orbe {c.mode}</span>
+                      <span className="shrink-0 text-muted-foreground/40">·</span>
                       <span className="shrink-0">{formatDistanceToNow(new Date(c.updatedAt), { addSuffix: true, locale: ptBR })}</span>
                     </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void deleteChat(c.id);
+                    }}
+                    className="absolute right-1 top-1 h-8 w-8 rounded-lg border border-border/60 bg-card/80 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    title="Apagar conversa"
+                    aria-label="Apagar conversa"
+                  >
+                    <Trash2 className="mx-auto size-3.5" />
                   </button>
                 </li>
                 );
@@ -243,7 +309,7 @@ function ChatPage() {
               <OrbeMark size={20} />
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-semibold truncate max-w-[200px] md:max-w-[360px]">{activeChat?.title ?? "Selecione uma conversa"}</div>
+              <div className="text-sm font-semibold truncate max-w-[200px] md:max-w-[360px]">{activeChat ? compactChatTitle(activeChat.title, 64) : "Selecione uma conversa"}</div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <Pill tone="blue">orbe {mode}</Pill>
                 {project && (
@@ -264,6 +330,16 @@ function ChatPage() {
               </Select>
             </div>
           </div>
+
+          {memoryNotice && (
+            <div className="border-b bg-card/30 px-4 py-2">
+              <div className="mx-auto max-w-3xl rounded-full border border-[color-mix(in_oklch,var(--orbe-blue)_25%,var(--border))] bg-[color-mix(in_oklch,var(--orbe-blue)_7%,var(--card))] px-3 py-1.5 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">memória atualizada</span>
+                <span className="mx-1.5 text-muted-foreground/50">·</span>
+                <span>{memoryNotice.replace("memória atualizada: ", "")}</span>
+              </div>
+            </div>
+          )}
 
           {/* Messages */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-10 py-6 md:py-8 space-y-6">
@@ -351,7 +427,7 @@ function ChatPage() {
               <span className="text-muted-foreground/40">·</span>
               <kbd className="rounded border border-border/70 bg-muted/60 px-1 py-0.5 text-[10px] font-medium">Shift+Enter</kbd> nova linha
               <span className="text-muted-foreground/40 hidden sm:inline">·</span>
-              <span className="hidden sm:inline">provedor mock até conectar APIs reais</span>
+              <span className="hidden sm:inline">orbeRouter com modelos inteligentes e fallback seguro</span>
             </div>
           </div>
         </section>
@@ -392,10 +468,15 @@ function Bubble({
     <div className={cn("flex items-start gap-3 animate-orbe-fade", isUser && "justify-end")}>
       {!isUser && <OrbeMark size={28} className="mt-1" />}
       <div className={cn("max-w-[78%]", isUser && "order-2")}>
-        {!isUser && (message.model || message.mode) && (
+        {!isUser && (message.providerName || message.modelName || message.model || message.mode) && (
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 flex flex-wrap gap-1.5">
-            {message.model && <span>{message.model}</span>}
+            {message.providerName && <span>{message.providerName}</span>}
+            {message.modelName && <><span>·</span><span>{message.modelName}</span></>}
+            {!message.modelName && message.model && <><span>·</span><span>{message.model}</span></>}
             {message.mode && <><span>·</span><span>orbe {message.mode}</span></>}
+            {(message.inputTokens || message.outputTokens) && (
+              <><span>·</span><span>{message.inputTokens ?? 0}+{message.outputTokens ?? 0} tokens</span></>
+            )}
           </div>
         )}
         <div className={cn("rounded-2xl px-4 py-3 text-sm leading-relaxed",

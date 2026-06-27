@@ -17,7 +17,7 @@
 | fase | nome | status | observação |
 | --- | --- | --- | --- |
 | 0 | UI refinada e base oficial | [~] | Branch `refinar-ui-orbeai` funcionando em Codespaces. Falta mergear na `main`. |
-| 1 | Fundação do backend | [ ] | Próximo grande passo técnico. |
+| 1 | Fundação do backend | [~] | API viva, modelos iniciais criados e migration inicial em validação. |
 | 2 | Modelo de dados mínimo | [ ] | Depende da fase 1. |
 | 3 | Autenticação e segurança | [ ] | Depende do banco e backend. |
 | 4 | Chat real com um provedor | [ ] | Primeira fatia viva do produto. |
@@ -105,7 +105,7 @@ Objetivo: criar API real da orbeAI.
 
 ### definição de pronto
 
-- [ ] `GET /health` retorna `ok`.
+- [x] `GET /health` retorna `ok`.
 - [ ] Backend sobe localmente via Docker.
 - [ ] Backend conecta no Postgres.
 - [ ] Migration inicial roda sem erro.
