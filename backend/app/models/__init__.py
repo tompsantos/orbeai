@@ -3,6 +3,7 @@
 from app.models.core import (
     Artifact,
     ArtifactVersion,
+    AuthSession,
     AuditLog,
     Chat,
     FeatureFlag,
@@ -12,13 +13,16 @@ from app.models.core import (
     ModelProvider,
     ModelRun,
     Project,
+    User,
     Workspace,
+    WorkspaceMember,
     WorkspaceSettings,
 )
 
 __all__ = [
     "Artifact",
     "ArtifactVersion",
+    "AuthSession",
     "AuditLog",
     "Chat",
     "FeatureFlag",
@@ -28,6 +32,8 @@ __all__ = [
     "ModelProvider",
     "ModelRun",
     "Project",
+    "User",
     "Workspace",
+    "WorkspaceMember",
     "WorkspaceSettings",
 ]

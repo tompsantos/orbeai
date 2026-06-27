@@ -1,4 +1,4 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Bell, Bot, Boxes, ChevronsLeft, Command, Compass, FlaskConical, Folders, Home, MessageSquare,
   Network, Search, Settings, ShieldCheck, Sparkles, Workflow } from "lucide-react";
 import { OrbeWordmark, OrbeMark } from "@/components/design-system/OrbeLogo";
@@ -11,7 +11,9 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { logout } from "@/lib/auth/authService";
+import { getAuthToken, getStoredAuthUser } from "@/lib/auth/session";
+import { useEffect, useMemo, useState } from "react";
 
 type NavItem = { to: string; label: string; icon: typeof Home; exact?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
@@ -55,8 +57,38 @@ const MOBILE_NAV: NavItem[] = [
 ];
 
 export function AppShell() {
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
+  const [authUser, setAuthUser] = useState(() => getStoredAuthUser());
+
+  useEffect(() => {
+    if (!getAuthToken()) {
+      void navigate({ to: "/login" });
+      return;
+    }
+
+    setAuthUser(getStoredAuthUser());
+  }, [navigate]);
+
+  const userInitials = useMemo(() => {
+    const source = authUser?.name || authUser?.email || "orbeAI";
+    const parts = source
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+
+    return source.slice(0, 2).toUpperCase();
+  }, [authUser]);
+
+  async function handleLogout() {
+    await logout();
+    await navigate({ to: "/login" });
+  }
 
   const isActive = (to: string, exact?: boolean) =>
     exact ? pathname === to : pathname === to || pathname.startsWith(to + "/");
@@ -167,20 +199,27 @@ export function AppShell() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="rounded-full ring-1 ring-border hover:ring-[var(--orbe-blue)] transition shrink-0" aria-label="Conta">
-                  <Avatar className="size-8"><AvatarFallback className="text-[11px] font-semibold tracking-wide bg-[var(--orbe-blue)]/15 text-[var(--orbe-blue)]">OA</AvatarFallback></Avatar>
+                  <Avatar className="size-8"><AvatarFallback className="text-[11px] font-semibold tracking-wide bg-[var(--orbe-blue)]/15 text-[var(--orbe-blue)]">{userInitials}</AvatarFallback></Avatar>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel className="flex flex-col gap-0.5">
-                  <span>orbeOne Admin</span>
-                  <span className="text-xs font-normal text-muted-foreground">owner · orbeOne HQ</span>
+                  <span>{authUser?.name ?? "orbeAI"}</span>
+                  <span className="text-xs font-normal text-muted-foreground">{authUser?.email ?? "sessão local"} · orbeOne HQ</span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild><Link to="/app/settings">Ajustes</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link to="/app/memory">Memória</Link></DropdownMenuItem>
                 <DropdownMenuItem asChild><Link to="/app/admin">Admin cockpit</Link></DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link to="/">Sair do app</Link></DropdownMenuItem>
+                <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      void handleLogout();
+                    }}
+                  >
+                    Sair da orbeAI
+                  </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </header>

@@ -35,8 +35,8 @@ function Landing() {
             <a href="#agentes" className="hover:text-foreground">Agentes</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" asChild><Link to="/app">Entrar</Link></Button>
-            <Button asChild><Link to="/app">Abrir cockpit <ArrowRight className="ml-1 size-4" /></Link></Button>
+            <Button variant="ghost" asChild><Link to="/login">Entrar</Link></Button>
+            <Button asChild><Link to="/login">Abrir cockpit <ArrowRight className="ml-1 size-4" /></Link></Button>
           </div>
         </div>
       </header>
@@ -54,7 +54,7 @@ function Landing() {
           Converse, pesquise, crie, automatize e conecte inteligência aos produtos da orbeOne em um único cockpit premium.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Button size="lg" asChild><Link to="/app">Abrir cockpit <ArrowRight className="ml-1 size-4" /></Link></Button>
+          <Button size="lg" asChild><Link to="/login">Abrir cockpit <ArrowRight className="ml-1 size-4" /></Link></Button>
           <Button size="lg" variant="outline" asChild><a href="#ecossistema">Conhecer o ecossistema</a></Button>
         </div>
 
@@ -182,7 +182,7 @@ function Landing() {
           <h2 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight">Entre no cockpit cognitivo.</h2>
           <p className="mt-3 text-muted-foreground">Comece com dados de demonstração — conecte modelos reais quando quiser.</p>
           <Button size="lg" className="mt-6" asChild>
-            <Link to="/app">Abrir orbeAI <ArrowRight className="ml-1 size-4" /></Link>
+            <Link to="/login">Abrir orbeAI <ArrowRight className="ml-1 size-4" /></Link>
           </Button>
         </div>
       </section>

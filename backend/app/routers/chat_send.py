@@ -1,15 +1,16 @@
 from time import perf_counter
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.dependencies.workspace import CurrentWorkspaceContext, get_current_workspace_context
 from app.models import Chat, Message, ModelRun, Project, Workspace
 from app.models.core import utc_now
 from app.schemas.chat_send import ChatSendRequest, ChatSendResponse, MemoryEventRead
 from app.services.audit import write_audit_log
 from app.services.auto_memory import maybe_create_auto_memory
-from app.services.bootstrap import get_or_create_default_workspace
 from app.services.feature_flags import is_feature_enabled
 from app.services.memory_context import build_memory_context, select_relevant_memories
 from app.services.orbe_router import resolve_chat_route
@@ -20,8 +21,12 @@ from app.services.workspace_policies import get_workspace_policy, memory_context
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
-def get_project_or_404(project_id: str, db: Session) -> Project:
-    project = db.get(Project, project_id)
+def get_project_or_404(project_id: str, db: Session, workspace_id: str) -> Project:
+    project = db.scalar(
+        select(Project)
+        .where(Project.id == project_id)
+        .where(Project.workspace_id == workspace_id)
+    )
 
     if project is None:
         raise HTTPException(
@@ -32,8 +37,12 @@ def get_project_or_404(project_id: str, db: Session) -> Project:
     return project
 
 
-def get_chat_or_404(chat_id: str, db: Session) -> Chat:
-    chat = db.get(Chat, chat_id)
+def get_chat_or_404(chat_id: str, db: Session, workspace_id: str) -> Chat:
+    chat = db.scalar(
+        select(Chat)
+        .where(Chat.id == chat_id)
+        .where(Chat.workspace_id == workspace_id)
+    )
 
     if chat is None:
         raise HTTPException(
@@ -68,21 +77,18 @@ def make_chat_title(content: str) -> str:
     return clean[:69].rstrip() + "..."
 
 
-def resolve_or_create_chat(payload: ChatSendRequest, db: Session) -> Chat:
+def resolve_or_create_chat(
+    payload: ChatSendRequest,
+    db: Session,
+    workspace: Workspace,
+) -> Chat:
     if payload.chat_id is not None:
-        return get_chat_or_404(payload.chat_id, db)
+        return get_chat_or_404(payload.chat_id, db, workspace.id)
 
-    default_workspace = get_or_create_default_workspace(db)
     project_id = payload.project_id
-    workspace = default_workspace
 
     if project_id is not None:
-        project = get_project_or_404(project_id, db)
-        workspace = (
-            default_workspace
-            if project.workspace_id == default_workspace.id
-            else get_workspace_or_404(project.workspace_id, db)
-        )
+        get_project_or_404(project_id, db, workspace.id)
 
     workspace_settings = get_or_create_workspace_settings(db, workspace)
 
@@ -110,10 +116,11 @@ def resolve_or_create_chat(payload: ChatSendRequest, db: Session) -> Chat:
 def send_chat_message(
     payload: ChatSendRequest,
     db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(get_current_workspace_context),
 ) -> ChatSendResponse:
     started_at = perf_counter()
 
-    chat = resolve_or_create_chat(payload, db)
+    chat = resolve_or_create_chat(payload, db, context.workspace)
 
     user_message = Message(
         chat_id=chat.id,
@@ -131,6 +138,9 @@ def send_chat_message(
             "requested_model_preference": payload.model_preference,
             "resolved_mode": chat.mode,
             "resolved_model_preference": chat.model_preference,
+            "auth_user_id": context.user_id,
+            "auth_workspace_id": context.workspace_id,
+            "membership_role": context.role,
         },
     )
 
@@ -256,6 +266,9 @@ def send_chat_message(
             "workspace_allow_exports": workspace_policy.allow_exports,
             "workspace_allow_public_sharing": workspace_policy.allow_public_sharing,
             "workspace_data_retention_days": workspace_policy.data_retention_days,
+            "auth_user_id": context.user_id,
+            "auth_workspace_id": context.workspace_id,
+            "membership_role": context.role,
         },
     )
 
@@ -315,6 +328,9 @@ def send_chat_message(
             "requested_model_preference": payload.model_preference,
             "resolved_mode": chat.mode,
             "resolved_model_preference": chat.model_preference,
+            "auth_user_id": context.user_id,
+            "auth_workspace_id": context.workspace_id,
+            "membership_role": context.role,
         },
     )
 

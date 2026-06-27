@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.dependencies.workspace import CurrentWorkspaceContext, get_current_workspace_context
 from app.models import Workspace
 from app.schemas.workspace import (
     WorkspaceRead,
@@ -10,7 +11,6 @@ from app.schemas.workspace import (
     WorkspaceUpdate,
 )
 from app.services.audit import write_audit_log
-from app.services.bootstrap import get_or_create_default_workspace
 from app.services.workspace_settings import get_or_create_workspace_settings
 
 router = APIRouter(prefix="/workspace", tags=["workspace"])
@@ -29,16 +29,23 @@ def to_workspace_read(workspace: Workspace, settings: object) -> WorkspaceRead:
 
 
 @router.get("", response_model=WorkspaceRead)
-def get_workspace(db: Session = Depends(get_db)) -> WorkspaceRead:
-    workspace = get_or_create_default_workspace(db)
+def get_workspace(
+    db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(get_current_workspace_context),
+) -> WorkspaceRead:
+    workspace = context.workspace
     settings = get_or_create_workspace_settings(db, workspace)
 
     return to_workspace_read(workspace, settings)
 
 
 @router.patch("", response_model=WorkspaceRead)
-def update_workspace(payload: WorkspaceUpdate, db: Session = Depends(get_db)) -> WorkspaceRead:
-    workspace = get_or_create_default_workspace(db)
+def update_workspace(
+    payload: WorkspaceUpdate,
+    db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(get_current_workspace_context),
+) -> WorkspaceRead:
+    workspace = context.workspace
     settings = get_or_create_workspace_settings(db, workspace)
     changes = payload.model_dump(exclude_unset=True)
 
@@ -53,6 +60,8 @@ def update_workspace(payload: WorkspaceUpdate, db: Session = Depends(get_db)) ->
         resource_id=workspace.id,
         meta={
             "changes": list(changes.keys()),
+            "auth_user_id": context.user_id,
+            "membership_role": context.role,
             "name": workspace.name,
             "plan": workspace.plan,
         },
@@ -69,8 +78,9 @@ def update_workspace(payload: WorkspaceUpdate, db: Session = Depends(get_db)) ->
 def update_workspace_settings(
     payload: WorkspaceSettingsUpdate,
     db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(get_current_workspace_context),
 ) -> WorkspaceSettingsRead:
-    workspace = get_or_create_default_workspace(db)
+    workspace = context.workspace
     settings = get_or_create_workspace_settings(db, workspace)
     changes = payload.model_dump(exclude_unset=True)
 
@@ -85,6 +95,8 @@ def update_workspace_settings(
         resource_id=settings.id,
         meta={
             "changes": list(changes.keys()),
+            "auth_user_id": context.user_id,
+            "membership_role": context.role,
             "locale": settings.locale,
             "timezone": settings.timezone,
             "default_chat_mode": settings.default_chat_mode,
