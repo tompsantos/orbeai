@@ -779,3 +779,22 @@ Próximo passo técnico:
 
 - preparar merge/release interna da backend foundation.
 
+
+---
+
+## atualização: preparação de merge/release interna
+
+A etapa 3.20 preparou a backend foundation para fechamento controlado.
+
+Status implementado:
+
+- Novo documento docs/backend-foundation-release.md.
+- Novo checklist docs/backend-foundation-final-checklist.md.
+- Release interna documentada.
+- Critérios finais de validação definidos.
+- Próximo passo após a fase 3: iniciar auth foundation na fase 4.
+
+Resultado:
+
+    fase 3 pronta para merge/release interna após validação final.
+
