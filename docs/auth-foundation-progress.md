@@ -18,7 +18,7 @@ Criar a fundação real de autenticação, usuários, sessões e memberships da 
 - [x] 4.1 criar modelos de User, WorkspaceMember e AuthSession
 - [x] 4.2 criar migration real
 - [x] 4.3 criar schemas e services de auth
-- [ ] 4.4 criar endpoints register/login/me/logout
+- [x] 4.4 criar endpoints register/login/me/logout
 - [ ] 4.5 proteger rotas principais
 - [ ] 4.6 migrar runtime para current_user/current_workspace
 - [ ] 4.7 integrar frontend com sessão real
@@ -127,4 +127,34 @@ Decisões mantidas:
 - Apenas token_hash é persistido.
 - Primeiro usuário registrado vira superuser e owner do workspace padrão.
 - Endpoints públicos ficam para a etapa 4.4.
+
+
+---
+
+## atualização: endpoints de auth
+
+A etapa 4.4 criou os primeiros endpoints reais de autenticação.
+
+Endpoints adicionados:
+
+- POST /v1/auth/register
+- POST /v1/auth/login
+- GET /v1/auth/me
+- GET /v1/auth/session
+- POST /v1/auth/logout
+
+Arquivos adicionados:
+
+- app/dependencies/auth.py
+- app/routers/auth.py
+
+Comportamento validado:
+
+- Registro cria usuário e sessão.
+- Login retorna token opaco.
+- /me exige token Bearer válido.
+- /session exige token Bearer válido.
+- Logout revoga sessão.
+- Token revogado deixa de autenticar.
+- Senha e password_hash não aparecem nas respostas.
 

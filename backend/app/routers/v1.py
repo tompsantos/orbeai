@@ -1,9 +1,10 @@
 from fastapi import APIRouter
 
-from app.routers import artifacts, audit, chat_send, chats, feature_flags, memories, messages, model_providers, model_runs, orbe_router, projects, workspace
+from app.routers import auth, artifacts, audit, chat_send, chats, feature_flags, memories, messages, model_providers, model_runs, orbe_router, projects, workspace
 
 router = APIRouter(prefix="/v1")
 
+router.include_router(auth.router)
 router.include_router(projects.router)
 router.include_router(workspace.router)
 router.include_router(artifacts.router)
