@@ -15,7 +15,7 @@ Criar a fundação real de autenticação, usuários, sessões e memberships da 
 ## fases planejadas
 
 - [x] 4.0 preparar branch e plano
-- [ ] 4.1 criar modelos de User, WorkspaceMember e AuthSession
+- [x] 4.1 criar modelos de User, WorkspaceMember e AuthSession
 - [ ] 4.2 criar migration real
 - [ ] 4.3 criar schemas e services de auth
 - [ ] 4.4 criar endpoints register/login/me/logout
@@ -34,3 +34,32 @@ Criar a fundação real de autenticação, usuários, sessões e memberships da 
 - Manter JWT para avaliação posterior, não como primeira escolha.
 - Health/status continuam públicos.
 - Workspace padrão segue temporário até current_workspace ficar pronto.
+
+
+---
+
+## atualização: modelos de auth
+
+A etapa 4.1 criou os modelos SQLAlchemy da fundação de autenticação.
+
+Modelos adicionados:
+
+- User
+- WorkspaceMember
+- AuthSession
+
+Tabelas planejadas:
+
+- users
+- workspace_members
+- auth_sessions
+
+Decisões aplicadas:
+
+- User usa email único.
+- Senha será armazenada apenas como password_hash.
+- WorkspaceMember conecta users a workspaces com role e status.
+- AuthSession usa token_hash, não token em texto puro.
+- AuthSession possui expiração e revogação.
+- A migration real fica para a etapa 4.2.
+

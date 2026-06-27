@@ -28,6 +28,55 @@ class Workspace(Base):
     projects: Mapped[list["Project"]] = relationship(back_populates="workspace")
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: make_id("usr"))
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(40), default="active", index=True, nullable=False)
+    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    memberships: Mapped[list["WorkspaceMember"]] = relationship(back_populates="user")
+    sessions: Mapped[list["AuthSession"]] = relationship(back_populates="user")
+
+
+class WorkspaceMember(Base):
+    __tablename__ = "workspace_members"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: make_id("wm"))
+    workspace_id: Mapped[str] = mapped_column(ForeignKey("workspaces.id"), index=True, nullable=False)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    role: Mapped[str] = mapped_column(String(40), default="member", index=True, nullable=False)
+    status: Mapped[str] = mapped_column(String(40), default="active", index=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    workspace: Mapped["Workspace"] = relationship()
+    user: Mapped["User"] = relationship(back_populates="memberships")
+
+
+class AuthSession(Base):
+    __tablename__ = "auth_sessions"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: make_id("sess"))
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(128), unique=True, index=True, nullable=False)
+    status: Mapped[str] = mapped_column(String(40), default="active", index=True, nullable=False)
+    user_agent: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="sessions")
+
+
 class Project(Base):
     __tablename__ = "projects"
 
