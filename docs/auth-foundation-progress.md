@@ -19,7 +19,7 @@ Criar a fundação real de autenticação, usuários, sessões e memberships da 
 - [x] 4.2 criar migration real
 - [x] 4.3 criar schemas e services de auth
 - [x] 4.4 criar endpoints register/login/me/logout
-- [ ] 4.5 proteger rotas principais
+- [x] 4.5 proteger rotas principais
 - [ ] 4.6 migrar runtime para current_user/current_workspace
 - [ ] 4.7 integrar frontend com sessão real
 - [ ] 4.8 criar telas de login/cadastro
@@ -157,4 +157,45 @@ Comportamento validado:
 - Logout revoga sessão.
 - Token revogado deixa de autenticar.
 - Senha e password_hash não aparecem nas respostas.
+
+
+---
+
+## atualização: proteção de rotas principais
+
+A etapa 4.5 passou a exigir autenticação nas rotas principais da API.
+
+Rotas públicas mantidas:
+
+- GET /health
+- GET /v1/status
+- POST /v1/auth/register
+- POST /v1/auth/login
+
+Rotas protegidas:
+
+- projects
+- workspace
+- artifacts
+- memories
+- chats
+- messages
+- chat/send
+- model runs
+- audit logs
+- feature flags
+- model providers
+- orbeRouter
+
+Estratégia de testes:
+
+- Testes antigos usam override temporário de autenticação no conftest.
+- Testes de auth real continuam usando Bearer token real.
+- Novo teste valida que rotas principais rejeitam request sem token.
+- Novo teste valida que rotas principais aceitam token válido.
+
+Observação:
+
+- Nesta etapa, as rotas exigem autenticação, mas ainda usam o workspace padrão internamente.
+- A migração real para current_user/current_workspace fica para a etapa 4.6.
 
