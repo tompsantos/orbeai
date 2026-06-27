@@ -42,6 +42,15 @@ const MODELS: { key: ModelKey; label: string }[] = [
   { key: "qwen", label: "Qwen" }, { key: "groq", label: "Groq" }, { key: "local", label: "Local" },
 ];
 
+
+function compactChatTitle(title: string, limit = 42): string {
+  const clean = title.trim().replace(/\s+/g, " ");
+
+  if (clean.length <= limit) return clean;
+
+  return `${clean.slice(0, limit - 1).trim()}…`;
+}
+
 function ChatPage() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string>("");
@@ -231,7 +240,7 @@ function ChatPage() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] gap-4 min-h-[620px] md:h-[calc(100vh-8rem)]">
+      <div className="grid grid-cols-1 md:grid-cols-[292px_minmax(0,1fr)] gap-3 min-h-[620px] md:h-[calc(100vh-8rem)]">
         {/* Conversation list */}
         <aside className="orbe-card p-3 hidden md:flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-3 px-1">
@@ -251,9 +260,9 @@ function ChatPage() {
               {filteredChats.map((c) => {
                 const active = activeChatId === c.id;
                 return (
-                <li key={c.id} className="flex items-stretch gap-1">
+                <li key={c.id} className="flex items-stretch gap-1 min-w-0">
                   <button onClick={() => setActiveChatId(c.id)} title={c.title}
-                    className={cn("min-w-0 flex-1 text-left rounded-lg px-2.5 py-2 transition-colors border",
+                    className={cn("min-w-0 max-w-full flex-1 overflow-hidden text-left rounded-lg px-2.5 py-2 transition-colors border",
                       active
                         ? "orbe-active"
                         : "border-transparent hover:bg-[var(--sidebar-accent)]")}>
@@ -261,7 +270,7 @@ function ChatPage() {
                       {c.pinned
                         ? <Pin className="size-3 shrink-0 text-[var(--orbe-blue)] fill-[var(--orbe-blue)]" />
                         : <MessageSquare className={cn("size-3 shrink-0", active ? "text-[var(--orbe-blue)]" : "text-muted-foreground")} />}
-                      <span className={cn("min-w-0 truncate text-sm", active ? "font-medium" : "")}>{c.title}</span>
+                      <span className={cn("block min-w-0 max-w-[205px] truncate text-sm", active ? "font-medium" : "")}>{compactChatTitle(c.title)}</span>
                     </div>
                     <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5 pl-5 min-w-0">
                       <span className="min-w-0 truncate">orbe {c.mode}</span>
@@ -300,7 +309,7 @@ function ChatPage() {
               <OrbeMark size={20} />
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-semibold truncate max-w-[200px] md:max-w-[360px]">{activeChat?.title ?? "Selecione uma conversa"}</div>
+              <div className="text-sm font-semibold truncate max-w-[200px] md:max-w-[360px]">{activeChat ? compactChatTitle(activeChat.title, 64) : "Selecione uma conversa"}</div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <Pill tone="blue">orbe {mode}</Pill>
                 {project && (
