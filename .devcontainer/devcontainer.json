@@ -5,13 +5,21 @@
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.12"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "enableNonRootDocker": "true"
     }
   },
   "remoteEnv": {
     "PATH": "/home/node/.bun/bin:${containerEnv:PATH}"
   },
   "postCreateCommand": "bash .devcontainer/post-create.sh",
-  "forwardPorts": [8080, 8000],
+  "forwardPorts": [
+    8080,
+    8000,
+    5433
+  ],
   "portsAttributes": {
     "8080": {
       "label": "orbeAI web preview",
@@ -20,6 +28,10 @@
     "8000": {
       "label": "orbeAI API",
       "onAutoForward": "notify"
+    },
+    "5433": {
+      "label": "orbeAI Postgres dev",
+      "onAutoForward": "silent"
     }
   },
   "customizations": {
