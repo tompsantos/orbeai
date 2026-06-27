@@ -12,8 +12,7 @@ import { ArrowLeft, Bot, FileText, MessageSquare, Pencil, Settings, Sparkles, Tr
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/projects/$id")({
-  head: ({ params }) => ({ meta: [{ title: `Projeto · orbeAI` }] }),
-  loader: ({ params }) => ({ id: params.id }),
+  head: () => ({ meta: [{ title: `Projeto · orbeAI` }] }),
   component: ProjectPage,
   notFoundComponent: () => <div className="p-8">Projeto não encontrado. <Link to="/app/projects" className="text-[var(--orbe-blue)]">Voltar</Link></div>,
   errorComponent: ({ reset }) => (
@@ -25,7 +24,7 @@ export const Route = createFileRoute("/app/projects/$id")({
 });
 
 function ProjectPage() {
-  const { id } = Route.useLoaderData();
+  const { id } = Route.useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
