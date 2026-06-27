@@ -688,3 +688,29 @@ Próximo passo técnico:
 
 - aplicar políticas de workspace no runtime, como allow_exports, allow_public_sharing e memory_policy.
 
+---
+
+## atualização: políticas de workspace no runtime
+
+A etapa atual conectou políticas persistidas do workspace ao runtime real da orbeAI.
+
+Status implementado:
+
+- Novo service app.services.workspace_policies.
+- memory_policy passou a controlar criação de memórias inferidas.
+- memory_policy=strict bloqueia memórias inferidas, mas preserva memórias explícitas pedidas pelo usuário.
+- memory_policy=balanced mantém o comportamento padrão.
+- memory_policy=adaptive reduz o threshold para memórias inferidas e aumenta o limite de contexto.
+- O limite de memórias injetadas no contexto passa a respeitar a política do workspace.
+- O metadata do chat passa a registrar memory_policy, allow_exports, allow_public_sharing e data_retention_days.
+- Novo endpoint GET /v1/artifacts/{artifact_id}/export.
+- allow_exports=false bloqueia exportação de artifacts com HTTP 403.
+- allow_exports=true permite exportar a última versão do artifact.
+- Exportações geram audit log artifact.export.
+- allow_public_sharing ficou preparado no service de políticas, mas sem endpoint público fake. A aplicação real dessa política deve vir junto da futura feature de compartilhamento público.
+
+Próximo passo técnico:
+
+- endurecer testes e isolamento de estado do banco;
+- depois consolidar documentação final da backend foundation.
+

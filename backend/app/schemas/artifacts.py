@@ -53,3 +53,12 @@ class ArtifactRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     versions: list[ArtifactVersionRead] = []
+
+class ArtifactExportRead(BaseModel):
+    artifact_id: str
+    title: str
+    kind: str
+    version_number: int
+    content: str
+    exported_at: datetime
+

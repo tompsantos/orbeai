@@ -15,6 +15,7 @@ from app.services.memory_context import build_memory_context, select_relevant_me
 from app.services.orbe_router import resolve_chat_route
 from app.services.providers.real import execute_provider, run_mock_provider
 from app.services.workspace_settings import get_or_create_workspace_settings
+from app.services.workspace_policies import get_workspace_policy, memory_context_limit
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -158,12 +159,15 @@ def send_chat_message(
         default=True,
     )
 
+    workspace_policy = get_workspace_policy(db, chat.workspace_id)
+
     if auto_memory_enabled:
         auto_memory_event = maybe_create_auto_memory(
             db=db,
             chat=chat,
             user_message_id=user_message.id,
             content=payload.content,
+            memory_policy=workspace_policy.memory_policy,
         )
 
         if auto_memory_event is not None:
@@ -185,7 +189,7 @@ def send_chat_message(
             workspace_id=chat.workspace_id,
             project_id=chat.project_id,
             query=payload.content,
-            limit=6,
+            limit=memory_context_limit(workspace_policy.memory_policy),
         )
 
     memory_context = build_memory_context(relevant_memories)
@@ -248,6 +252,10 @@ def send_chat_message(
             "feature_auto_memory_enabled": auto_memory_enabled,
             "feature_memory_context_enabled": memory_context_enabled,
             "feature_real_providers_enabled": real_providers_enabled,
+            "workspace_memory_policy": workspace_policy.memory_policy,
+            "workspace_allow_exports": workspace_policy.allow_exports,
+            "workspace_allow_public_sharing": workspace_policy.allow_public_sharing,
+            "workspace_data_retention_days": workspace_policy.data_retention_days,
         },
     )
 
@@ -299,6 +307,10 @@ def send_chat_message(
             "feature_auto_memory_enabled": auto_memory_enabled,
             "feature_memory_context_enabled": memory_context_enabled,
             "feature_real_providers_enabled": real_providers_enabled,
+            "workspace_memory_policy": workspace_policy.memory_policy,
+            "workspace_allow_exports": workspace_policy.allow_exports,
+            "workspace_allow_public_sharing": workspace_policy.allow_public_sharing,
+            "workspace_data_retention_days": workspace_policy.data_retention_days,
             "requested_mode": payload.mode,
             "requested_model_preference": payload.model_preference,
             "resolved_mode": chat.mode,

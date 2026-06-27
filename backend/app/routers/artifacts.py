@@ -4,14 +4,17 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
 from app.models import Artifact, ArtifactVersion, Project
+from app.models.core import utc_now
 from app.services.audit import write_audit_log
 from app.services.feature_flags import is_feature_enabled
+from app.services.workspace_policies import get_workspace_policy
 from app.schemas.artifacts import (
     ArtifactCreate,
     ArtifactRead,
     ArtifactUpdate,
     ArtifactVersionCreate,
     ArtifactVersionRead,
+    ArtifactExportRead,
 )
 from app.services.bootstrap import get_or_create_default_workspace
 
@@ -120,6 +123,52 @@ def list_artifacts(
     result = db.scalars(statement.order_by(Artifact.updated_at.desc()))
 
     return list(result)
+
+
+
+@router.get("/{artifact_id}/export", response_model=ArtifactExportRead)
+def export_artifact(artifact_id: str, db: Session = Depends(get_db)) -> dict:
+    artifact = get_artifact_or_404(artifact_id, db)
+    policy = get_workspace_policy(db, artifact.workspace_id)
+
+    if not policy.allow_exports:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Artifact exports disabled by workspace policy.",
+        )
+
+    if not artifact.versions:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Artifact has no versions to export.",
+        )
+
+    latest_version = max(artifact.versions, key=lambda version: version.version_number)
+
+    write_audit_log(
+        db=db,
+        workspace_id=artifact.workspace_id,
+        action="artifact.export",
+        resource_type="artifact",
+        resource_id=artifact.id,
+        meta={
+            "title": artifact.title,
+            "kind": artifact.kind,
+            "version_number": latest_version.version_number,
+            "allow_exports": policy.allow_exports,
+        },
+    )
+
+    db.commit()
+
+    return {
+        "artifact_id": artifact.id,
+        "title": artifact.title,
+        "kind": artifact.kind,
+        "version_number": latest_version.version_number,
+        "content": latest_version.content,
+        "exported_at": utc_now(),
+    }
 
 
 @router.get("/{artifact_id}", response_model=ArtifactRead)

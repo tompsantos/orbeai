@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Chat, Memory
 from app.services.memory_context import normalize_text
+from app.services.workspace_policies import allows_inferred_memory, inferred_memory_threshold
 
 
 @dataclass(frozen=True)
@@ -142,6 +143,7 @@ def maybe_create_auto_memory(
     chat: Chat,
     user_message_id: str,
     content: str,
+    memory_policy: str = "balanced",
 ) -> MemoryWriteEvent | None:
     if should_skip_memory(content):
         return None
@@ -151,7 +153,10 @@ def maybe_create_auto_memory(
 
     score, reason = relevance_score(content)
 
-    if not explicit and score < 0.78:
+    if not explicit and not allows_inferred_memory(memory_policy):
+        return None
+
+    if not explicit and score < inferred_memory_threshold(memory_policy):
         return None
 
     memory_content = clean_memory_content(content)
