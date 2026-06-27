@@ -284,3 +284,45 @@ Próximo passo técnico recomendado:
 - manter fallback mock visual enquanto a API não estiver acessível;
 - depois criar o orbeRouter real para escolher OpenAI, Gemini, Qwen, Groq ou provider local.
 
+---
+
+## atualização: frontend conectado ao backend
+
+A fase 2.5 conectou a interface visual da orbeAI ao backend real.
+
+Status validado:
+
+- O frontend passou a usar VITE_MOCK_MODE=false.
+- O frontend passou a usar VITE_API_BASE_URL=/api.
+- O Vite passou a fazer proxy de /api para http://localhost:8000.
+- O chat visual em /app/chat lista conversas reais vindas do Postgres.
+- O botão Nova cria conversa real no backend.
+- O envio de mensagem chama POST /v1/chat/send.
+- A resposta mock da assistant volta do backend real.
+- Ao recarregar a página, as conversas e mensagens continuam persistidas.
+- O service layer mantém fallback para mock mode quando VITE_MOCK_MODE=true.
+
+A fase 2.6 conectou projects ao backend real.
+
+Status validado:
+
+- projectService.list usa GET /v1/projects quando mock mode está desligado.
+- projectService.get usa GET /v1/projects/{project_id}.
+- projectService.create usa POST /v1/projects.
+- projectService.update usa PATCH /v1/projects/{project_id}.
+- Cockpit e tela de projetos passam a consumir projetos reais do Postgres.
+- .env.local fica fora do commit e serve apenas para ambiente local.
+
+Observação técnica:
+
+- A solução usa proxy /api no Vite, igual ao padrão que depois será reproduzido no Nginx da Audaks.
+- Nenhum endpoint foi adaptado para Codespaces.
+- O backend continua preparado para Docker, Postgres e deploy em servidor real.
+
+Próximo passo técnico:
+
+- expor model_runs via API;
+- permitir visualizar execuções de modelo por chat;
+- preparar base para tela de uso, custos e observabilidade;
+- depois conectar adminService/modelService ao backend real.
+
