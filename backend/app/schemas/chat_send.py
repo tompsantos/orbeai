@@ -8,8 +8,8 @@ class ChatSendRequest(BaseModel):
     chat_id: str | None = None
     project_id: str | None = None
     title: str | None = Field(default=None, max_length=220)
-    mode: str = Field(default="strategist", min_length=2, max_length=60)
-    model_preference: str = Field(default="auto", min_length=2, max_length=80)
+    mode: str | None = Field(default=None, min_length=2, max_length=60)
+    model_preference: str | None = Field(default=None, min_length=2, max_length=80)
 
 
 class MemoryEventRead(BaseModel):

@@ -4,16 +4,17 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models import Chat, Message, ModelRun, Project
+from app.models import Chat, Message, ModelRun, Project, Workspace
 from app.models.core import utc_now
 from app.schemas.chat_send import ChatSendRequest, ChatSendResponse, MemoryEventRead
 from app.services.audit import write_audit_log
 from app.services.auto_memory import maybe_create_auto_memory
-from app.services.feature_flags import is_feature_enabled
 from app.services.bootstrap import get_or_create_default_workspace
+from app.services.feature_flags import is_feature_enabled
 from app.services.memory_context import build_memory_context, select_relevant_memories
 from app.services.orbe_router import resolve_chat_route
 from app.services.providers.real import execute_provider, run_mock_provider
+from app.services.workspace_settings import get_or_create_workspace_settings
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -42,25 +43,59 @@ def get_chat_or_404(chat_id: str, db: Session) -> Chat:
     return chat
 
 
+def get_workspace_or_404(workspace_id: str, db: Session) -> Workspace:
+    workspace = db.get(Workspace, workspace_id)
+
+    if workspace is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace not found",
+        )
+
+    return workspace
+
+
+def make_chat_title(content: str) -> str:
+    clean = " ".join(content.strip().split())
+
+    if not clean:
+        return "Nova conversa"
+
+    if len(clean) <= 72:
+        return clean
+
+    return clean[:69].rstrip() + "..."
+
+
 def resolve_or_create_chat(payload: ChatSendRequest, db: Session) -> Chat:
     if payload.chat_id is not None:
         return get_chat_or_404(payload.chat_id, db)
 
-    workspace = get_or_create_default_workspace(db)
+    default_workspace = get_or_create_default_workspace(db)
     project_id = payload.project_id
+    workspace = default_workspace
 
     if project_id is not None:
         project = get_project_or_404(project_id, db)
-        workspace_id = project.workspace_id
-    else:
-        workspace_id = workspace.id
+        workspace = (
+            default_workspace
+            if project.workspace_id == default_workspace.id
+            else get_workspace_or_404(project.workspace_id, db)
+        )
+
+    workspace_settings = get_or_create_workspace_settings(db, workspace)
+
+    resolved_mode = payload.mode or workspace_settings.default_chat_mode
+    resolved_model_preference = (
+        payload.model_preference or workspace_settings.default_model_preference
+    )
 
     chat = Chat(
-        workspace_id=workspace_id,
+        workspace_id=workspace.id,
         project_id=project_id,
-        title=payload.title or "Nova conversa",
-        mode=payload.mode,
-        model_preference=payload.model_preference,
+        title=payload.title or make_chat_title(payload.content),
+        mode=resolved_mode,
+        model_preference=resolved_model_preference,
     )
 
     db.add(chat)
@@ -89,8 +124,12 @@ def send_chat_message(
         output_tokens=None,
         meta={
             "source": "chat-send",
-            "mode": payload.mode,
-            "model_preference": payload.model_preference,
+            "mode": chat.mode,
+            "model_preference": chat.model_preference,
+            "requested_mode": payload.mode,
+            "requested_model_preference": payload.model_preference,
+            "resolved_mode": chat.mode,
+            "resolved_model_preference": chat.model_preference,
         },
     )
 
@@ -201,7 +240,8 @@ def send_chat_message(
             "source": "chat-send",
             "router_primary_provider": decision.primary_provider_slug,
             "router_selected_provider": selected_provider_slug,
-            "router_is_fallback": decision.is_fallback or selected_provider_slug != decision.provider_slug,
+            "router_is_fallback": decision.is_fallback
+            or selected_provider_slug != decision.provider_slug,
             "provider_error": provider_error,
             "memory_context_count": len(relevant_memories),
             "memory_event_count": len(memory_events),
@@ -238,6 +278,7 @@ def send_chat_message(
     )
 
     db.add(model_run)
+    db.flush()
 
     write_audit_log(
         db=db,
@@ -258,6 +299,10 @@ def send_chat_message(
             "feature_auto_memory_enabled": auto_memory_enabled,
             "feature_memory_context_enabled": memory_context_enabled,
             "feature_real_providers_enabled": real_providers_enabled,
+            "requested_mode": payload.mode,
+            "requested_model_preference": payload.model_preference,
+            "resolved_mode": chat.mode,
+            "resolved_model_preference": chat.model_preference,
         },
     )
 

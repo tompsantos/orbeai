@@ -668,3 +668,23 @@ Próximo passo técnico:
 - usar default_chat_mode e default_model_preference nas criações de chat;
 - depois preparar políticas reais de workspace, como allow_exports e memory_policy.
 
+---
+
+## atualização: workspace defaults no runtime
+
+A etapa atual conectou configurações padrão do workspace ao runtime do chat.
+
+Status implementado:
+
+- ChatSendRequest passou a aceitar mode e model_preference como opcionais.
+- A criação de novos chats passa a resolver mode usando workspace_settings.default_chat_mode quando o request não informa mode.
+- A criação de novos chats passa a resolver model_preference usando workspace_settings.default_model_preference quando o request não informa model_preference.
+- Preferências explícitas do request continuam tendo prioridade sobre os defaults do workspace.
+- Mensagens de usuário passam a registrar mode, model_preference, requested_mode, requested_model_preference, resolved_mode e resolved_model_preference no metadata.
+- Audit logs de chat.send também registram requested_mode, requested_model_preference, resolved_mode e resolved_model_preference.
+- Foram adicionados testes cobrindo defaults do workspace e preferência explícita.
+
+Próximo passo técnico:
+
+- aplicar políticas de workspace no runtime, como allow_exports, allow_public_sharing e memory_policy.
+
