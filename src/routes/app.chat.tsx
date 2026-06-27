@@ -364,7 +364,7 @@ function ChatPage() {
               <span className="text-muted-foreground/40">·</span>
               <kbd className="rounded border border-border/70 bg-muted/60 px-1 py-0.5 text-[10px] font-medium">Shift+Enter</kbd> nova linha
               <span className="text-muted-foreground/40 hidden sm:inline">·</span>
-              <span className="hidden sm:inline">orbeRouter com OpenAI/Gemini reais e fallback seguro</span>
+              <span className="hidden sm:inline">orbeRouter com modelos inteligentes e fallback seguro</span>
             </div>
           </div>
         </section>

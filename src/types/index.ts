@@ -186,6 +186,36 @@ export interface ModelProvider {
   costPerKTokens?: number;
 }
 
+export interface ModelRun {
+  id: ID;
+  chatId?: ID;
+  messageId?: ID;
+  provider: ProviderSlug;
+  providerName: string;
+  modelName: string;
+  taskType?: string;
+  status: string;
+  latencyMs?: number;
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostUsd: number;
+  routerReason?: string;
+  fallbackChain: string[];
+  errorMessage?: string;
+  createdAt: string;
+}
+
+export interface ProviderUsageSummary {
+  provider: ProviderSlug;
+  providerName: string;
+  requests: number;
+  tokens: number;
+  costUsd: number;
+  avgLatencyMs: number;
+  errors: number;
+  lastRunAt?: string;
+}
+
 export interface ModelConfig {
   defaultProvider: ProviderSlug;
   fallbackChain: ProviderSlug[];

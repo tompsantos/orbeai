@@ -4,8 +4,15 @@ import { GlassCard, Pill, SectionHeader } from "@/components/design-system/Primi
 import { Button } from "@/components/ui/button";
 import { modelService } from "@/lib/api";
 import { resolveRoute } from "@/lib/ai/router";
-import type { ModelConfig, ModelProvider, ProviderSlug, RoutingMode } from "@/types";
-import { Activity, AlertTriangle, Cpu, KeyRound, Route as RouteIcon, Zap } from "lucide-react";
+import type {
+  ModelConfig,
+  ModelProvider,
+  ModelRun,
+  ProviderSlug,
+  ProviderUsageSummary,
+  RoutingMode,
+} from "@/types";
+import { Activity, AlertTriangle, BarChart3, Clock, Cpu, KeyRound, Route as RouteIcon, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -17,26 +24,70 @@ export const Route = createFileRoute("/app/models")({
 const MODES: RoutingMode[] = ["automático", "menor custo", "melhor qualidade", "mais rápido", "raciocínio profundo", "código", "pesquisa", "documento", "multimodal"];
 const ALL: ProviderSlug[] = ["anthropic", "openai", "gemini", "groq", "qwen", "local", "mock"];
 
+function formatDate(value?: string) {
+  if (!value) return "—";
+
+  return new Date(value).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatCost(value: number) {
+  return `US$ ${value.toFixed(4)}`;
+}
+
 function ModelsPage() {
   const [providers, setProviders] = useState<ModelProvider[]>([]);
   const [config, setConfig] = useState<ModelConfig | null>(null);
+  const [runs, setRuns] = useState<ModelRun[]>([]);
+  const [usage, setUsage] = useState<ProviderUsageSummary[]>([]);
 
   async function refresh() {
-    const [ps, cfg] = await Promise.all([modelService.providers(), modelService.getConfig()]);
-    setProviders(ps); setConfig(cfg);
+    const [ps, cfg, rs, us] = await Promise.all([
+      modelService.providers(),
+      modelService.getConfig(),
+      modelService.modelRuns(20),
+      modelService.providerUsage(),
+    ]);
+
+    setProviders(ps);
+    setConfig(cfg);
+    setRuns(rs);
+    setUsage(us);
   }
+
   useEffect(() => { void refresh(); }, []);
 
   const preview = useMemo(() => config ? resolveRoute({ routingMode: config.routingMode }) : null, [config]);
 
+  const totals = useMemo(() => ({
+    requests: usage.reduce((sum, item) => sum + item.requests, 0),
+    tokens: usage.reduce((sum, item) => sum + item.tokens, 0),
+    costUsd: usage.reduce((sum, item) => sum + item.costUsd, 0),
+    errors: usage.reduce((sum, item) => sum + item.errors, 0),
+  }), [usage]);
+
   if (!config) return <div className="p-8 text-sm text-muted-foreground">Carregando…</div>;
 
-  async function setDefault(slug: ProviderSlug) { await modelService.setDefaultProvider(slug); toast.success(`Padrão: ${slug}`); await refresh(); }
-  async function setMode(mode: RoutingMode) { await modelService.setRoutingMode(mode); await refresh(); }
+  async function setDefault(slug: ProviderSlug) {
+    await modelService.setDefaultProvider(slug);
+    toast.success(`Padrão: ${slug}`);
+    await refresh();
+  }
+
+  async function setMode(mode: RoutingMode) {
+    await modelService.setRoutingMode(mode);
+    await refresh();
+  }
+
   async function toggleFallback(slug: ProviderSlug) {
     const chain = config!.fallbackChain.includes(slug)
       ? config!.fallbackChain.filter((p) => p !== slug)
       : [...config!.fallbackChain, slug];
+
     await modelService.setFallbackChain(chain);
     await refresh();
   }
@@ -44,19 +95,40 @@ function ModelsPage() {
   return (
     <div className="space-y-6">
       <SectionHeader eyebrow="model router" title="Roteamento inteligente de modelos"
-        description="orbeRouter escolhe o melhor provedor por tarefa, custo e latência." />
+        description="orbeRouter escolhe o melhor provedor por tarefa, custo, latência e disponibilidade." />
 
-      <GlassCard hoverable={false} className="border-[color-mix(in_oklch,var(--warning)_35%,var(--border))] bg-[color-mix(in_oklch,var(--warning)_7%,var(--card))]">
+      <GlassCard hoverable={false} className="border-[color-mix(in_oklch,var(--orbe-blue)_28%,var(--border))] bg-[color-mix(in_oklch,var(--orbe-blue)_6%,var(--card))]">
         <div className="flex items-start gap-3 text-sm">
-          <span className="flex items-center justify-center size-8 rounded-lg bg-[color-mix(in_oklch,var(--warning)_18%,transparent)] shrink-0">
-            <AlertTriangle className="size-4 text-[var(--warning)]" />
+          <span className="flex items-center justify-center size-8 rounded-lg bg-[color-mix(in_oklch,var(--orbe-blue)_18%,transparent)] shrink-0">
+            <AlertTriangle className="size-4 text-[var(--orbe-blue)]" />
           </span>
           <div>
-            <div className="font-medium">Chaves reais entram server-side depois.</div>
-            <p className="text-muted-foreground mt-1 text-pretty">A configuração aqui é local. Provedores reais só serão chamados após plugar variáveis de ambiente no backend.</p>
+            <div className="font-medium">Providers reais ficam protegidos no backend.</div>
+            <p className="text-muted-foreground mt-1 text-pretty">
+              OpenAI e Gemini já podem executar server-side quando habilitados por ambiente. Outros providers seguem como placeholder até serem plugados no roteiro.
+            </p>
           </div>
         </div>
       </GlassCard>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <GlassCard hoverable={false}>
+          <div className="text-xs text-muted-foreground">requisições</div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums">{totals.requests}</div>
+        </GlassCard>
+        <GlassCard hoverable={false}>
+          <div className="text-xs text-muted-foreground">tokens</div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums">{totals.tokens.toLocaleString("pt-BR")}</div>
+        </GlassCard>
+        <GlassCard hoverable={false}>
+          <div className="text-xs text-muted-foreground">custo estimado</div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums">{formatCost(totals.costUsd)}</div>
+        </GlassCard>
+        <GlassCard hoverable={false}>
+          <div className="text-xs text-muted-foreground">erros/fallbacks</div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums">{totals.errors}</div>
+        </GlassCard>
+      </div>
 
       <GlassCard hoverable={false}>
         <SectionHeader eyebrow="modo de roteamento" title="Como a orbeAI escolhe modelos" />
@@ -128,6 +200,70 @@ function ModelsPage() {
           </GlassCard>
         ))}
       </div>
+
+      <GlassCard hoverable={false}>
+        <SectionHeader eyebrow="uso por provider" title="Execuções agregadas"
+          description="Resumo calculado a partir dos model_runs reais gravados no backend." />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {usage.map((item) => (
+            <div key={item.provider} className="orbe-surface p-3.5 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-semibold">{item.providerName}</div>
+                <Pill tone={item.errors ? "warn" : "success"}>{item.errors ? `${item.errors} erro(s)` : "ok"}</Pill>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div><BarChart3 className="inline size-3 mr-1 text-muted-foreground" /> {item.requests} chamadas</div>
+                <div><Cpu className="inline size-3 mr-1 text-muted-foreground" /> {item.tokens.toLocaleString("pt-BR")} tokens</div>
+                <div><Clock className="inline size-3 mr-1 text-muted-foreground" /> {item.avgLatencyMs || "—"} ms méd.</div>
+                <div><Zap className="inline size-3 mr-1 text-muted-foreground" /> {formatCost(item.costUsd)}</div>
+              </div>
+              <div className="mt-2 text-[11px] text-muted-foreground">última execução: {formatDate(item.lastRunAt)}</div>
+            </div>
+          ))}
+          {usage.length === 0 && (
+            <div className="text-sm text-muted-foreground">Nenhuma execução real registrada ainda.</div>
+          )}
+        </div>
+      </GlassCard>
+
+      <GlassCard hoverable={false}>
+        <SectionHeader eyebrow="model_runs" title="Execuções recentes"
+          description="Últimas chamadas feitas pelo backend, incluindo provider, modelo, tokens e fallback." />
+        <div className="space-y-2">
+          {runs.map((run) => (
+            <div key={run.id} className="orbe-surface p-3 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-medium">
+                  {run.providerName} · {run.modelName}
+                </div>
+                <div className="text-muted-foreground tabular-nums">{formatDate(run.createdAt)}</div>
+              </div>
+              <div className="mt-1.5 flex flex-wrap gap-2 text-muted-foreground">
+                <span>{run.taskType ?? "task"}</span>
+                <span>·</span>
+                <span>{run.inputTokens}+{run.outputTokens} tokens</span>
+                <span>·</span>
+                <span>{run.latencyMs ?? "—"} ms</span>
+                <span>·</span>
+                <span>{formatCost(run.estimatedCostUsd)}</span>
+              </div>
+              {run.errorMessage && (
+                <div className="mt-2 text-[11px] text-[var(--warning)] line-clamp-2">
+                  {run.errorMessage}
+                </div>
+              )}
+              {run.routerReason && (
+                <div className="mt-2 text-[11px] text-muted-foreground line-clamp-2">
+                  {run.routerReason}
+                </div>
+              )}
+            </div>
+          ))}
+          {runs.length === 0 && (
+            <div className="text-sm text-muted-foreground">Nenhuma execução recente.</div>
+          )}
+        </div>
+      </GlassCard>
     </div>
   );
 }
