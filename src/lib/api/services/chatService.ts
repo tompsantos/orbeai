@@ -30,6 +30,14 @@ interface BackendMessage {
   created_at: string;
 }
 
+interface BackendMemoryEvent {
+  memory_id: string;
+  label: string;
+  status: string;
+  action: string;
+  reason: string;
+}
+
 interface BackendChatSendResponse {
   chat_id: string;
   provider: string;
@@ -37,6 +45,7 @@ interface BackendChatSendResponse {
   model_run_id: string;
   user_message: BackendMessage;
   assistant_message: BackendMessage;
+  memory_events?: BackendMemoryEvent[];
 }
 
 const CHAT_MODES: ChatMode[] = [
@@ -318,6 +327,7 @@ export const chatService = {
           ...toMessage(payload.assistant_message),
           modelRunId: payload.model_run_id,
         },
+        memoryEvents: payload.memory_events ?? [],
       };
     }
 
@@ -330,7 +340,7 @@ export const chatService = {
 
     auditService.log({ action: "chat.send", target: chatId, level: "info" });
 
-    return { decision, response, userMessage: null, assistantMessage: null };
+    return { decision, response, userMessage: null, assistantMessage: null, memoryEvents: [] };
   },
 
   async compare(content: string, models: ModelKey[], mode?: ChatMode) {

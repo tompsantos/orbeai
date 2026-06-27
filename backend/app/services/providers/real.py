@@ -17,12 +17,28 @@ class ProviderExecutionResult:
     error_message: str | None = None
 
 
-def build_prompt(content: str, mode: str, model_preference: str) -> str:
+def build_prompt(
+    content: str,
+    mode: str,
+    model_preference: str,
+    memory_context: str | None = None,
+) -> str:
+    context_block = ""
+
+    if memory_context:
+        context_block = (
+            "\n\nContexto persistente autorizado:\n"
+            f"{memory_context}\n"
+            "Use essas memórias apenas quando forem relevantes. "
+            "Não mencione que recebeu memórias internas, a menos que o usuário pergunte. "
+            "Não trate memória como verdade absoluta se a mensagem atual contradisser claramente o contexto.\n"
+        )
+
     return (
         "Você é a orbeAI, o sistema operacional cognitivo da orbeOne. "
         "Responda em português do Brasil, com clareza, precisão e foco prático. "
         f"Modo ativo: {mode}. Preferência de modelo: {model_preference}. "
-        f"Mensagem do usuário: {content}"
+        f"{context_block}\nMensagem do usuário: {content}"
     )
 
 
@@ -42,13 +58,14 @@ def estimate_provider_cost(provider_slug: str, input_tokens: int, output_tokens:
     return 0.0
 
 
-def run_mock_provider(content: str, mode: str, model_preference: str) -> ProviderExecutionResult:
+def run_mock_provider(content: str, mode: str, model_preference: str, memory_context: str | None = None) -> ProviderExecutionResult:
     started_at = perf_counter()
 
     result = generate_mock_response(
         user_content=content,
         mode=mode,
         model_preference=model_preference,
+        memory_context=memory_context,
     )
 
     return ProviderExecutionResult(
@@ -62,7 +79,7 @@ def run_mock_provider(content: str, mode: str, model_preference: str) -> Provide
     )
 
 
-def run_openai_provider(content: str, mode: str, model_preference: str) -> ProviderExecutionResult:
+def run_openai_provider(content: str, mode: str, model_preference: str, memory_context: str | None = None) -> ProviderExecutionResult:
     from openai import OpenAI
 
     settings = get_settings()
@@ -71,7 +88,7 @@ def run_openai_provider(content: str, mode: str, model_preference: str) -> Provi
         raise RuntimeError("OPENAI_API_KEY não configurada.")
 
     started_at = perf_counter()
-    prompt = build_prompt(content=content, mode=mode, model_preference=model_preference)
+    prompt = build_prompt(content=content, mode=mode, model_preference=model_preference, memory_context=memory_context)
 
     client = OpenAI(api_key=settings.openai_api_key)
 
@@ -104,7 +121,7 @@ def run_openai_provider(content: str, mode: str, model_preference: str) -> Provi
     )
 
 
-def run_gemini_provider(content: str, mode: str, model_preference: str) -> ProviderExecutionResult:
+def run_gemini_provider(content: str, mode: str, model_preference: str, memory_context: str | None = None) -> ProviderExecutionResult:
     from google import genai
 
     settings = get_settings()
@@ -113,7 +130,7 @@ def run_gemini_provider(content: str, mode: str, model_preference: str) -> Provi
         raise RuntimeError("GEMINI_API_KEY não configurada.")
 
     started_at = perf_counter()
-    prompt = build_prompt(content=content, mode=mode, model_preference=model_preference)
+    prompt = build_prompt(content=content, mode=mode, model_preference=model_preference, memory_context=memory_context)
 
     client = genai.Client(api_key=settings.gemini_api_key)
 
@@ -147,12 +164,14 @@ def execute_provider(
     content: str,
     mode: str,
     model_preference: str,
+    memory_context: str | None = None,
 ) -> ProviderExecutionResult:
     if provider_slug == "openai":
         return run_openai_provider(
             content=content,
             mode=mode,
             model_preference=model_preference,
+            memory_context=memory_context,
         )
 
     if provider_slug == "gemini":
@@ -160,6 +179,7 @@ def execute_provider(
             content=content,
             mode=mode,
             model_preference=model_preference,
+            memory_context=memory_context,
         )
 
     return run_mock_provider(

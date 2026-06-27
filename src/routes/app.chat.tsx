@@ -53,6 +53,7 @@ function ChatPage() {
   const [search, setSearch] = useState("");
   const [pendingAttachment, setPendingAttachment] = useState<Attachment | null>(null);
   const [lastDecision, setLastDecision] = useState<RouterDecision | null>(null);
+  const [memoryNotice, setMemoryNotice] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [memories, setMemories] = useState<MemoryItem[]>([]);
@@ -93,6 +94,7 @@ function ChatPage() {
     setActiveChatId(chat.id);
     setMessages([]);
     setLastDecision(null);
+    setMemoryNotice(null);
   }
 
   async function deleteChat(chatId: string) {
@@ -129,8 +131,14 @@ function ChatPage() {
     if (!activeChatId) return;
     setStreaming(true);
     try {
-      const { response, decision, assistantMessage } = await chatService.send(activeChatId, text, { mode, model });
+      const { response, decision, assistantMessage, memoryEvents } = await chatService.send(activeChatId, text, { mode, model });
       setLastDecision(decision);
+
+      if (memoryEvents.length > 0) {
+        const firstMemory = memoryEvents[0];
+        setMemoryNotice(`memória atualizada: ${firstMemory.label}`);
+        window.setTimeout(() => setMemoryNotice(null), 5500);
+      }
 
       const asst: Message = assistantMessage ?? {
         id: `a_${Date.now()}`,
@@ -313,6 +321,16 @@ function ChatPage() {
               </Select>
             </div>
           </div>
+
+          {memoryNotice && (
+            <div className="border-b bg-card/30 px-4 py-2">
+              <div className="mx-auto max-w-3xl rounded-full border border-[color-mix(in_oklch,var(--orbe-blue)_25%,var(--border))] bg-[color-mix(in_oklch,var(--orbe-blue)_7%,var(--card))] px-3 py-1.5 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">memória atualizada</span>
+                <span className="mx-1.5 text-muted-foreground/50">·</span>
+                <span>{memoryNotice.replace("memória atualizada: ", "")}</span>
+              </div>
+            </div>
+          )}
 
           {/* Messages */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-10 py-6 md:py-8 space-y-6">

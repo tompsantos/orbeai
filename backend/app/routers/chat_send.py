@@ -6,8 +6,10 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models import Chat, Message, ModelRun, Project
 from app.models.core import utc_now
-from app.schemas.chat_send import ChatSendRequest, ChatSendResponse
+from app.schemas.chat_send import ChatSendRequest, ChatSendResponse, MemoryEventRead
+from app.services.auto_memory import maybe_create_auto_memory
 from app.services.bootstrap import get_or_create_default_workspace
+from app.services.memory_context import build_memory_context, select_relevant_memories
 from app.services.orbe_router import resolve_chat_route
 from app.services.providers.real import execute_provider, run_mock_provider
 
@@ -94,6 +96,35 @@ def send_chat_message(
     db.commit()
     db.refresh(user_message)
 
+    memory_events: list[MemoryEventRead] = []
+
+    auto_memory_event = maybe_create_auto_memory(
+        db=db,
+        chat=chat,
+        user_message_id=user_message.id,
+        content=payload.content,
+    )
+
+    if auto_memory_event is not None:
+        memory_events.append(
+            MemoryEventRead(
+                memory_id=auto_memory_event.memory_id,
+                label=auto_memory_event.label,
+                status=auto_memory_event.status,
+                action=auto_memory_event.action,
+                reason=auto_memory_event.reason,
+            )
+        )
+
+    relevant_memories = select_relevant_memories(
+        db=db,
+        workspace_id=chat.workspace_id,
+        project_id=chat.project_id,
+        query=payload.content,
+        limit=6,
+    )
+    memory_context = build_memory_context(relevant_memories)
+
     decision = resolve_chat_route(
         content=payload.content,
         mode=chat.mode,
@@ -109,6 +140,7 @@ def send_chat_message(
             content=payload.content,
             mode=chat.mode,
             model_preference=chat.model_preference,
+            memory_context=memory_context,
         )
         router_reason = decision.reason
     except Exception as exc:
@@ -117,6 +149,7 @@ def send_chat_message(
             content=payload.content,
             mode=chat.mode,
             model_preference=chat.model_preference,
+            memory_context=memory_context,
         )
         router_reason = (
             f"{decision.reason} A execução real falhou e o orbe-mock foi acionado como fallback. "
@@ -137,6 +170,8 @@ def send_chat_message(
             "router_selected_provider": decision.provider_slug,
             "router_is_fallback": decision.is_fallback,
             "provider_error": provider_error,
+            "memory_context_count": len(relevant_memories),
+            "memory_event_count": len(memory_events),
         },
     )
 
@@ -177,4 +212,5 @@ def send_chat_message(
         model_run_id=model_run.id,
         user_message=user_message,
         assistant_message=assistant_message,
+        memory_events=memory_events,
     )

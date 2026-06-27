@@ -12,6 +12,14 @@ class ChatSendRequest(BaseModel):
     model_preference: str = Field(default="auto", min_length=2, max_length=80)
 
 
+class MemoryEventRead(BaseModel):
+    memory_id: str
+    label: str
+    status: str
+    action: str
+    reason: str
+
+
 class ChatSendResponse(BaseModel):
     chat_id: str
     provider: str
@@ -19,3 +27,4 @@ class ChatSendResponse(BaseModel):
     model_run_id: str
     user_message: MessageRead
     assistant_message: MessageRead
+    memory_events: list[MemoryEventRead] = Field(default_factory=list)
