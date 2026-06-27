@@ -18,6 +18,8 @@ dependencies = [
   "python-jose[cryptography]>=3.3.0",
   "passlib[bcrypt]>=1.7.4",
   "structlog>=24.1.0",
+    "openai>=2.0.0",
+    "google-genai>=1.0.0",
 ]
 
 [project.optional-dependencies]

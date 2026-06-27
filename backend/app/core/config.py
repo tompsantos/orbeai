@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     qwen_api_key: str | None = Field(default=None, validation_alias="QWEN_API_KEY")
     groq_api_key: str | None = Field(default=None, validation_alias="GROQ_API_KEY")
 
+    openai_model: str = Field(default="gpt-5.5", validation_alias="OPENAI_MODEL")
+    gemini_model: str = Field(default="gemini-3.5-flash", validation_alias="GEMINI_MODEL")
+    enable_real_providers: bool = Field(default=False, validation_alias="ENABLE_REAL_PROVIDERS")
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

@@ -22,7 +22,7 @@ def test_router_resolve_uses_mock_executor_with_primary_provider_decision() -> N
     assert decision["provider_slug"] == "mock"
     assert decision["provider_name"] == "orbe-mock"
     assert decision["model_name"] == "orbe-mock-v0"
-    assert decision["primary_provider_slug"] == "anthropic"
+    assert decision["primary_provider_slug"] == "openai"
     assert decision["is_fallback"] is True
     assert "código" in decision["task_hints"]
 

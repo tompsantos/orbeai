@@ -9,7 +9,7 @@ from app.models.core import utc_now
 from app.schemas.chat_send import ChatSendRequest, ChatSendResponse
 from app.services.bootstrap import get_or_create_default_workspace
 from app.services.orbe_router import resolve_chat_route
-from app.services.providers.mock import generate_mock_response
+from app.services.providers.real import execute_provider, run_mock_provider
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -101,25 +101,42 @@ def send_chat_message(
         routing_mode="automático",
     )
 
-    result = generate_mock_response(
-        user_content=payload.content,
-        mode=chat.mode,
-        model_preference=chat.model_preference,
-    )
+    provider_error: str | None = None
+
+    try:
+        result = execute_provider(
+            provider_slug=decision.provider_slug,
+            content=payload.content,
+            mode=chat.mode,
+            model_preference=chat.model_preference,
+        )
+        router_reason = decision.reason
+    except Exception as exc:
+        provider_error = f"{type(exc).__name__}: {exc}"
+        result = run_mock_provider(
+            content=payload.content,
+            mode=chat.mode,
+            model_preference=chat.model_preference,
+        )
+        router_reason = (
+            f"{decision.reason} A execução real falhou e o orbe-mock foi acionado como fallback. "
+            f"Erro: {provider_error}"
+        )
 
     assistant_message = Message(
         chat_id=chat.id,
         role="assistant",
         content=result.content,
-        provider=decision.provider_name,
-        model=decision.model_name,
+        provider=result.provider_name,
+        model=result.model_name,
         input_tokens=result.input_tokens,
         output_tokens=result.output_tokens,
         meta={
             "source": "chat-send",
-            "provider_type": "mock",
             "router_primary_provider": decision.primary_provider_slug,
+            "router_selected_provider": decision.provider_slug,
             "router_is_fallback": decision.is_fallback,
+            "provider_error": provider_error,
         },
     )
 
@@ -136,17 +153,17 @@ def send_chat_message(
         workspace_id=chat.workspace_id,
         chat_id=chat.id,
         message_id=assistant_message.id,
-        provider_name=decision.provider_name,
-        model_name=decision.model_name,
+        provider_name=result.provider_name,
+        model_name=result.model_name,
         task_type="chat.send",
         status="success",
         latency_ms=latency_ms,
         input_tokens=result.input_tokens,
         output_tokens=result.output_tokens,
-        estimated_cost_usd=decision.estimated_cost_usd,
-        router_reason=decision.reason,
+        estimated_cost_usd=result.estimated_cost_usd,
+        router_reason=router_reason,
         fallback_chain=decision.fallback_chain,
-        error_message=None,
+        error_message=provider_error,
     )
 
     db.add(model_run)
@@ -155,8 +172,8 @@ def send_chat_message(
 
     return ChatSendResponse(
         chat_id=chat.id,
-        provider=decision.provider_name,
-        model=decision.model_name,
+        provider=result.provider_name,
+        model=result.model_name,
         model_run_id=model_run.id,
         user_message=user_message,
         assistant_message=assistant_message,

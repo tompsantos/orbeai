@@ -13,11 +13,11 @@ PROVIDER_NAMES = {
     "local": "Local",
 }
 
-PROVIDER_MODELS = {
+DEFAULT_PROVIDER_MODELS = {
     "mock": "orbe-mock-v0",
-    "openai": "gpt-5.5-thinking",
+    "openai": "gpt-5.5",
     "anthropic": "claude-sonnet-4.5",
-    "gemini": "gemini-2.5-flash",
+    "gemini": "gemini-3.5-flash",
     "qwen": "qwen-plus",
     "groq": "llama-3.3-70b",
     "local": "qwen-local",
@@ -35,11 +35,11 @@ PROVIDER_LATENCY = {
 
 PROVIDER_COST = {
     "mock": 0.0,
-    "openai": 0.005,
-    "anthropic": 0.006,
-    "gemini": 0.004,
-    "qwen": 0.002,
-    "groq": 0.0005,
+    "openai": 0.0,
+    "anthropic": 0.0,
+    "gemini": 0.0,
+    "qwen": 0.0,
+    "groq": 0.0,
     "local": 0.0,
 }
 
@@ -108,24 +108,28 @@ class RouterDecision:
     is_fallback: bool
 
 
+def provider_model(slug: str, settings: Settings) -> str:
+    if slug == "openai":
+        return settings.openai_model
+
+    if slug == "gemini":
+        return settings.gemini_model
+
+    return DEFAULT_PROVIDER_MODELS[slug]
+
+
 def provider_is_configured(slug: str, settings: Settings) -> bool:
     if slug == "mock":
         return True
 
+    if not settings.enable_real_providers:
+        return False
+
     if slug == "openai":
         return bool(settings.openai_api_key)
 
-    if slug == "anthropic":
-        return bool(settings.anthropic_api_key)
-
     if slug == "gemini":
         return bool(settings.gemini_api_key)
-
-    if slug == "qwen":
-        return bool(settings.qwen_api_key)
-
-    if slug == "groq":
-        return bool(settings.groq_api_key)
 
     return False
 
@@ -154,16 +158,13 @@ def choose_primary_provider(
         return provider, f"Modelo selecionado manualmente: {model_key}.", hints
 
     if route_mode in {"menor custo", "custo"}:
-        return "groq", "Política de menor custo.", hints
+        return "gemini", "Política de menor custo entre providers habilitados.", hints
 
     if route_mode in {"mais rápido", "rapidez", "latência"}:
-        return "groq", "Política de menor latência.", hints
+        return "gemini", "Política de menor latência entre providers habilitados.", hints
 
     if route_mode in {"raciocínio profundo", "melhor qualidade", "qualidade"}:
-        return "anthropic", "Política de raciocínio profundo.", hints
-
-    if "código" in hints:
-        return "anthropic", "Prompt com sinal de código.", hints
+        return "openai", "Política de melhor qualidade entre providers habilitados.", hints
 
     if "pesquisa" in hints:
         return "gemini", "Prompt com sinal de pesquisa.", hints
@@ -171,8 +172,11 @@ def choose_primary_provider(
     if "documento" in hints or "governo" in hints:
         return "openai", "Prompt com sinal de documento/governo.", hints
 
+    if "código" in hints:
+        return "openai", "Prompt com sinal de código.", hints
+
     if "ops" in hints or "vendas" in hints:
-        return "groq", "Prompt com sinal de operação/comercial.", hints
+        return "gemini", "Prompt com sinal de operação/comercial.", hints
 
     provider = MODE_TO_PROVIDER.get(mode or "padrão", "mock")
     return provider, f"Modo orbe {mode or 'padrão'} usado como critério.", hints
@@ -192,30 +196,35 @@ def resolve_chat_route(
         routing_mode=routing_mode,
     )
 
-    primary_configured = provider_is_configured(primary_provider, settings)
+    fallback_chain = build_fallback_chain(primary_provider)
+    execution_chain = [primary_provider, *fallback_chain]
 
-    # Nesta fase, providers reais ainda não executam chamadas externas.
-    # O orbeRouter escolhe o provider ideal, mas usa orbe-mock como executor seguro.
-    selected_provider = "mock"
-    selected_configured = True
+    selected_provider = next(
+        provider
+        for provider in execution_chain
+        if provider_is_configured(provider, settings)
+    )
+
+    primary_configured = provider_is_configured(primary_provider, settings)
+    selected_configured = provider_is_configured(selected_provider, settings)
     is_fallback = selected_provider != primary_provider
 
     if is_fallback:
         reason = (
             f"orbeRouter escolheu {primary_provider} porque {primary_reason} "
-            "Como o executor real ainda não está conectado, usou orbe-mock como fallback seguro."
+            f"Como {primary_provider} não está executável agora, usou {selected_provider} como fallback seguro."
         )
     else:
-        reason = f"orbeRouter escolheu orbe-mock porque {primary_reason}"
+        reason = f"orbeRouter escolheu {selected_provider} porque {primary_reason}"
 
     return RouterDecision(
         provider_slug=selected_provider,
         provider_name=PROVIDER_NAMES[selected_provider],
-        model_name=PROVIDER_MODELS[selected_provider],
+        model_name=provider_model(selected_provider, settings),
         primary_provider_slug=primary_provider,
-        primary_model_name=PROVIDER_MODELS[primary_provider],
+        primary_model_name=provider_model(primary_provider, settings),
         reason=reason,
-        fallback_chain=[primary_provider, *build_fallback_chain(primary_provider)],
+        fallback_chain=execution_chain,
         routing_mode=routing_mode or "automático",
         estimated_latency_ms=PROVIDER_LATENCY[selected_provider],
         estimated_cost_usd=PROVIDER_COST[selected_provider],

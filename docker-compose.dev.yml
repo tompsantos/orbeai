@@ -27,6 +27,11 @@ services:
       DATABASE_URL: postgresql+psycopg://orbeai:orbeai@orbeai-postgres:5432/orbeai
       BACKEND_CORS_ORIGINS: http://localhost:8080,http://localhost:5173,http://localhost:3000
       JWT_SECRET: dev-only-change-me
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.5}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
+      ENABLE_REAL_PROVIDERS: ${ENABLE_REAL_PROVIDERS:-false}
     ports:
       - "8000:8000"
     depends_on:
