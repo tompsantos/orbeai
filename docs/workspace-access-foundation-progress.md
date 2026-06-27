@@ -5,7 +5,7 @@ Branch: feature/workspace-access-foundation
 ## checklist
 
 - [x] 5.0 preparar branch e plano
-- [ ] 5.1 criar matriz de roles/permissões
+- [x] 5.1 criar matriz de roles/permissões
 - [ ] 5.2 criar dependency de permissão no backend
 - [ ] 5.3 aplicar permissões em rotas sensíveis
 - [ ] 5.4 criar endpoints de membros do workspace
@@ -31,3 +31,52 @@ Arquivos criados:
 
 - docs/workspace-access-foundation-plan.md
 - docs/workspace-access-foundation-progress.md
+
+
+---
+
+## atualização: matriz de roles e permissões
+
+A etapa 5.1 criou a matriz base de autorização da orbeAI.
+
+Arquivos criados:
+
+- backend/app/core/permissions.py
+- backend/tests/test_permissions_matrix.py
+
+Roles definidos:
+
+- owner
+- admin
+- member
+- viewer
+
+Permissões definidas:
+
+- workspace
+- workspace settings
+- members
+- projects
+- chats
+- chat send
+- artifacts
+- memories
+- audit
+- feature flags
+- model runs
+- model providers
+
+Comportamento definido:
+
+- owner possui todas as permissões conhecidas.
+- admin possui permissões administrativas operacionais, mas não altera roles.
+- member pode operar dentro do workspace, mas não administra membros, auditoria ou feature flags.
+- viewer é leitura.
+- roles desconhecidos não recebem permissões.
+- permissões desconhecidas são negadas até para owner.
+
+Observação:
+
+- Esta etapa ainda não aplica permissões nas rotas.
+- A aplicação nas rotas começa na etapa 5.2 com dependency reutilizável.
+
