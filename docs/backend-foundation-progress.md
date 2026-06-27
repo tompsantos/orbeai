@@ -326,3 +326,31 @@ Próximo passo técnico:
 - preparar base para tela de uso, custos e observabilidade;
 - depois conectar adminService/modelService ao backend real.
 
+---
+
+## atualização: cockpit com uso real
+
+A etapa atual conectou o cockpit da orbeAI aos dados reais de model_runs.
+
+Status validado:
+
+- adminService.usage passou a consumir GET /v1/model-runs quando VITE_MOCK_MODE=false.
+- adminService.audit passou a derivar eventos recentes a partir de model_runs.
+- O cockpit deixa de depender exclusivamente de mock para uso e auditoria.
+- Os dados de uso agora refletem execuções reais do fluxo POST /v1/chat/send.
+- O service layer mantém fallback para mock mode quando VITE_MOCK_MODE=true.
+
+Observação técnica:
+
+- Esta etapa segue o plano de construção: depois de projects, chats, messages e chat_send, entramos em observabilidade.
+- O gráfico de uso ainda é simples, agregado por data.
+- Custos ainda aparecem zerados enquanto o provider ativo for orbe-mock.
+- A tela fica preparada para custos reais quando OpenAI, Gemini, Qwen, Groq ou providers locais forem conectados.
+
+Próximo passo técnico:
+
+- expor providers/modelos via backend;
+- conectar modelService ao backend real;
+- alimentar tela de modelos/orbeRouter com dados reais;
+- depois iniciar implementação do orbeRouter backend.
+
