@@ -3,10 +3,12 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.permissions import MODEL_PROVIDERS_READ
 from app.db.session import get_db
+from app.dependencies.permissions import require_permission
+from app.dependencies.workspace import CurrentWorkspaceContext
 from app.models import ModelRun
 from app.schemas.model_providers import ModelProviderRead
-from app.services.bootstrap import get_or_create_default_workspace
 from app.services.feature_flags import is_feature_enabled
 
 router = APIRouter(prefix="/model-providers", tags=["model-providers"])
@@ -30,12 +32,13 @@ def average_price_per_k(input_price_per_m: float, output_price_per_m: float) -> 
     return round(((input_price_per_m + output_price_per_m) / 2) / 1000, 6)
 
 
-def latency_by_provider(db: Session) -> dict[str, int]:
+def latency_by_provider(db: Session, workspace_id: str) -> dict[str, int]:
     rows = db.execute(
         select(
             ModelRun.provider_name,
             func.avg(ModelRun.latency_ms),
         )
+        .where(ModelRun.workspace_id == workspace_id)
         .where(ModelRun.latency_ms.is_not(None))
         .group_by(ModelRun.provider_name)
     ).all()
@@ -53,13 +56,15 @@ def latency_by_provider(db: Session) -> dict[str, int]:
 
 
 @router.get("", response_model=list[ModelProviderRead])
-def list_model_providers(db: Session = Depends(get_db)) -> list[ModelProviderRead]:
+def list_model_providers(
+    db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(MODEL_PROVIDERS_READ)),
+) -> list[ModelProviderRead]:
     settings = get_settings()
-    latencies = latency_by_provider(db)
-    workspace = get_or_create_default_workspace(db)
+    latencies = latency_by_provider(db, context.workspace_id)
     real_providers_enabled = settings.enable_real_providers and is_feature_enabled(
         db=db,
-        workspace_id=workspace.id,
+        workspace_id=context.workspace_id,
         key="real_providers",
         default=True,
     )

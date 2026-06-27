@@ -2,27 +2,38 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.permissions import (
+    ARTIFACTS_CREATE,
+    ARTIFACTS_DELETE,
+    ARTIFACTS_READ,
+    ARTIFACTS_UPDATE,
+)
 from app.db.session import get_db
+from app.dependencies.permissions import require_permission
+from app.dependencies.workspace import CurrentWorkspaceContext
 from app.models import Artifact, ArtifactVersion, Project
 from app.models.core import utc_now
-from app.services.audit import write_audit_log
-from app.services.feature_flags import is_feature_enabled
-from app.services.workspace_policies import get_workspace_policy
 from app.schemas.artifacts import (
     ArtifactCreate,
+    ArtifactExportRead,
     ArtifactRead,
     ArtifactUpdate,
     ArtifactVersionCreate,
     ArtifactVersionRead,
-    ArtifactExportRead,
 )
-from app.services.bootstrap import get_or_create_default_workspace
+from app.services.audit import write_audit_log
+from app.services.feature_flags import is_feature_enabled
+from app.services.workspace_policies import get_workspace_policy
 
 router = APIRouter(prefix="/artifacts", tags=["artifacts"])
 
 
-def get_project_or_404(project_id: str, db: Session) -> Project:
-    project = db.get(Project, project_id)
+def get_project_or_404(project_id: str, db: Session, workspace_id: str) -> Project:
+    project = db.scalar(
+        select(Project)
+        .where(Project.id == project_id)
+        .where(Project.workspace_id == workspace_id)
+    )
 
     if project is None:
         raise HTTPException(
@@ -33,10 +44,11 @@ def get_project_or_404(project_id: str, db: Session) -> Project:
     return project
 
 
-def get_artifact_or_404(artifact_id: str, db: Session) -> Artifact:
+def get_artifact_or_404(artifact_id: str, db: Session, workspace_id: str) -> Artifact:
     artifact = db.scalar(
         select(Artifact)
         .where(Artifact.id == artifact_id)
+        .where(Artifact.workspace_id == workspace_id)
         .options(selectinload(Artifact.versions))
     )
 
@@ -59,18 +71,18 @@ def next_version_number(artifact_id: str, db: Session) -> int:
 
 
 @router.post("", response_model=ArtifactRead, status_code=status.HTTP_201_CREATED)
-def create_artifact(payload: ArtifactCreate, db: Session = Depends(get_db)) -> Artifact:
-    workspace = get_or_create_default_workspace(db)
+def create_artifact(
+    payload: ArtifactCreate,
+    db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(ARTIFACTS_CREATE)),
+) -> Artifact:
     project_id = payload.project_id
 
     if project_id is not None:
-        project = get_project_or_404(project_id, db)
-        workspace_id = project.workspace_id
-    else:
-        workspace_id = workspace.id
+        get_project_or_404(project_id, db, context.workspace_id)
 
     artifact = Artifact(
-        workspace_id=workspace_id,
+        workspace_id=context.workspace_id,
         project_id=project_id,
         title=payload.title,
         kind=payload.kind,
@@ -102,20 +114,27 @@ def create_artifact(payload: ArtifactCreate, db: Session = Depends(get_db)) -> A
             "title": artifact.title,
             "kind": artifact.kind,
             "version_number": 1,
+            "auth_user_id": context.user_id,
+            "membership_role": context.role,
         },
     )
 
     db.commit()
 
-    return get_artifact_or_404(artifact.id, db)
+    return get_artifact_or_404(artifact.id, db, context.workspace_id)
 
 
 @router.get("", response_model=list[ArtifactRead])
 def list_artifacts(
     project_id: str | None = Query(default=None),
     db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(ARTIFACTS_READ)),
 ) -> list[Artifact]:
-    statement = select(Artifact).options(selectinload(Artifact.versions))
+    statement = (
+        select(Artifact)
+        .where(Artifact.workspace_id == context.workspace_id)
+        .options(selectinload(Artifact.versions))
+    )
 
     if project_id is not None:
         statement = statement.where(Artifact.project_id == project_id)
@@ -125,10 +144,13 @@ def list_artifacts(
     return list(result)
 
 
-
 @router.get("/{artifact_id}/export", response_model=ArtifactExportRead)
-def export_artifact(artifact_id: str, db: Session = Depends(get_db)) -> dict:
-    artifact = get_artifact_or_404(artifact_id, db)
+def export_artifact(
+    artifact_id: str,
+    db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(ARTIFACTS_READ)),
+) -> dict:
+    artifact = get_artifact_or_404(artifact_id, db, context.workspace_id)
     policy = get_workspace_policy(db, artifact.workspace_id)
 
     if not policy.allow_exports:
@@ -156,6 +178,8 @@ def export_artifact(artifact_id: str, db: Session = Depends(get_db)) -> dict:
             "kind": artifact.kind,
             "version_number": latest_version.version_number,
             "allow_exports": policy.allow_exports,
+            "auth_user_id": context.user_id,
+            "membership_role": context.role,
         },
     )
 
@@ -172,8 +196,12 @@ def export_artifact(artifact_id: str, db: Session = Depends(get_db)) -> dict:
 
 
 @router.get("/{artifact_id}", response_model=ArtifactRead)
-def get_artifact(artifact_id: str, db: Session = Depends(get_db)) -> Artifact:
-    return get_artifact_or_404(artifact_id, db)
+def get_artifact(
+    artifact_id: str,
+    db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(ARTIFACTS_READ)),
+) -> Artifact:
+    return get_artifact_or_404(artifact_id, db, context.workspace_id)
 
 
 @router.patch("/{artifact_id}", response_model=ArtifactRead)
@@ -181,8 +209,9 @@ def update_artifact(
     artifact_id: str,
     payload: ArtifactUpdate,
     db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(ARTIFACTS_UPDATE)),
 ) -> Artifact:
-    artifact = get_artifact_or_404(artifact_id, db)
+    artifact = get_artifact_or_404(artifact_id, db, context.workspace_id)
     changes = payload.model_dump(exclude_unset=True)
 
     if "project_id" in changes:
@@ -191,7 +220,7 @@ def update_artifact(
         if project_id is None:
             artifact.project_id = None
         else:
-            project = get_project_or_404(project_id, db)
+            project = get_project_or_404(project_id, db, context.workspace_id)
             artifact.project_id = project.id
             artifact.workspace_id = project.workspace_id
 
@@ -208,12 +237,14 @@ def update_artifact(
         resource_id=artifact.id,
         meta={
             "changes": list(changes.keys()),
+            "auth_user_id": context.user_id,
+            "membership_role": context.role,
         },
     )
 
     db.commit()
 
-    return get_artifact_or_404(artifact.id, db)
+    return get_artifact_or_404(artifact.id, db, context.workspace_id)
 
 
 @router.post("/{artifact_id}/versions", response_model=ArtifactVersionRead, status_code=status.HTTP_201_CREATED)
@@ -221,8 +252,9 @@ def create_artifact_version(
     artifact_id: str,
     payload: ArtifactVersionCreate,
     db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(ARTIFACTS_UPDATE)),
 ) -> ArtifactVersion:
-    artifact = get_artifact_or_404(artifact_id, db)
+    artifact = get_artifact_or_404(artifact_id, db, context.workspace_id)
 
     if not is_feature_enabled(
         db=db,
@@ -252,6 +284,8 @@ def create_artifact_version(
         resource_id=artifact.id,
         meta={
             "version_number": version.version_number,
+            "auth_user_id": context.user_id,
+            "membership_role": context.role,
         },
     )
 
@@ -262,15 +296,12 @@ def create_artifact_version(
 
 
 @router.delete("/{artifact_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_artifact(artifact_id: str, db: Session = Depends(get_db)) -> None:
-    artifact = db.get(Artifact, artifact_id)
-
-    if artifact is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Artifact not found",
-        )
-
+def delete_artifact(
+    artifact_id: str,
+    db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(ARTIFACTS_DELETE)),
+) -> None:
+    artifact = get_artifact_or_404(artifact_id, db, context.workspace_id)
     workspace_id = artifact.workspace_id
 
     db.execute(delete(ArtifactVersion).where(ArtifactVersion.artifact_id == artifact_id))
@@ -282,6 +313,10 @@ def delete_artifact(artifact_id: str, db: Session = Depends(get_db)) -> None:
         action="artifact.delete",
         resource_type="artifact",
         resource_id=artifact_id,
+        meta={
+            "auth_user_id": context.user_id,
+            "membership_role": context.role,
+        },
     )
 
     db.commit()

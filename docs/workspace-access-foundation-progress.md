@@ -7,7 +7,7 @@ Branch: feature/workspace-access-foundation
 - [x] 5.0 preparar branch e plano
 - [x] 5.1 criar matriz de roles/permissões
 - [x] 5.2 criar dependency de permissão no backend
-- [ ] 5.3 aplicar permissões em rotas sensíveis
+- [x] 5.3 aplicar permissões em rotas sensíveis
 - [ ] 5.4 criar endpoints de membros do workspace
 - [ ] 5.5 criar tela/admin de membros
 - [ ] 5.6 permitir alteração de role/status
@@ -112,4 +112,60 @@ Observação:
 
 - Esta etapa ainda não aplica permissões nas rotas reais.
 - A aplicação nas rotas começa na etapa 5.3.
+
+
+---
+
+## atualização: permissões aplicadas nas rotas sensíveis
+
+A etapa 5.3 aplicou a dependency require_permission nas rotas sensíveis do backend.
+
+Arquivos alterados:
+
+- backend/app/routers/projects.py
+- backend/app/routers/workspace.py
+- backend/app/routers/chat_send.py
+- backend/app/routers/artifacts.py
+- backend/app/routers/memories.py
+- backend/app/routers/audit.py
+- backend/app/routers/feature_flags.py
+- backend/app/routers/model_runs.py
+- backend/app/routers/model_providers.py
+
+Arquivo de teste criado:
+
+- backend/tests/test_route_permissions_api.py
+
+Comportamento implementado:
+
+- Projects exigem projects.read, projects.create ou projects.update.
+- Workspace exige workspace.read ou workspace.update.
+- Workspace settings exige workspace.settings.update.
+- Chat send exige chat.send.
+- Artifacts exigem artifacts.read, artifacts.create, artifacts.update ou artifacts.delete.
+- Memories exigem memories.read, memories.create, memories.update ou memories.delete.
+- Audit logs exigem audit.read.
+- Feature flags exigem feature_flags.read ou feature_flags.update.
+- Model runs exigem model_runs.read.
+- Model providers exige model_providers.read.
+
+Melhoria de isolamento:
+
+- Artifacts passaram a usar current_workspace em vez de workspace padrão.
+- Memories passaram a usar current_workspace em vez de workspace padrão.
+- Audit logs passaram a filtrar por current_workspace.
+- Feature flags passaram a usar current_workspace.
+- Model runs passaram a filtrar por current_workspace.
+- Model providers passaram a calcular latência e feature flag por current_workspace.
+
+Validação manual:
+
+- A rota /v1/feature-flags retornou 200 para usuário com membership owner.
+- A validação local exigiu corrigir a role da membership de desenvolvimento para owner.
+
+Resultado esperado:
+
+- Rotas protegidas continuam funcionando para owner.
+- Roles sem permissão recebem 403 com code permission_denied.
+- Recursos não vazam entre workspaces.
 

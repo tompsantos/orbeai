@@ -1,8 +1,14 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.core.permissions import (
+    WORKSPACE_READ,
+    WORKSPACE_SETTINGS_UPDATE,
+    WORKSPACE_UPDATE,
+)
 from app.db.session import get_db
-from app.dependencies.workspace import CurrentWorkspaceContext, get_current_workspace_context
+from app.dependencies.permissions import require_permission
+from app.dependencies.workspace import CurrentWorkspaceContext
 from app.models import Workspace
 from app.schemas.workspace import (
     WorkspaceRead,
@@ -31,7 +37,7 @@ def to_workspace_read(workspace: Workspace, settings: object) -> WorkspaceRead:
 @router.get("", response_model=WorkspaceRead)
 def get_workspace(
     db: Session = Depends(get_db),
-    context: CurrentWorkspaceContext = Depends(get_current_workspace_context),
+    context: CurrentWorkspaceContext = Depends(require_permission(WORKSPACE_READ)),
 ) -> WorkspaceRead:
     workspace = context.workspace
     settings = get_or_create_workspace_settings(db, workspace)
@@ -43,7 +49,7 @@ def get_workspace(
 def update_workspace(
     payload: WorkspaceUpdate,
     db: Session = Depends(get_db),
-    context: CurrentWorkspaceContext = Depends(get_current_workspace_context),
+    context: CurrentWorkspaceContext = Depends(require_permission(WORKSPACE_UPDATE)),
 ) -> WorkspaceRead:
     workspace = context.workspace
     settings = get_or_create_workspace_settings(db, workspace)
@@ -78,7 +84,7 @@ def update_workspace(
 def update_workspace_settings(
     payload: WorkspaceSettingsUpdate,
     db: Session = Depends(get_db),
-    context: CurrentWorkspaceContext = Depends(get_current_workspace_context),
+    context: CurrentWorkspaceContext = Depends(require_permission(WORKSPACE_SETTINGS_UPDATE)),
 ) -> WorkspaceSettingsRead:
     workspace = context.workspace
     settings = get_or_create_workspace_settings(db, workspace)

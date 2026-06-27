@@ -2,17 +2,28 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
+from app.core.permissions import (
+    MEMORIES_CREATE,
+    MEMORIES_DELETE,
+    MEMORIES_READ,
+    MEMORIES_UPDATE,
+)
 from app.db.session import get_db
+from app.dependencies.permissions import require_permission
+from app.dependencies.workspace import CurrentWorkspaceContext
 from app.models import Memory, Project
 from app.schemas.memories import MemoryCreate, MemoryRead, MemoryUpdate
 from app.services.audit import write_audit_log
-from app.services.bootstrap import get_or_create_default_workspace
 
 router = APIRouter(prefix="/memories", tags=["memories"])
 
 
-def get_project_or_404(project_id: str, db: Session) -> Project:
-    project = db.get(Project, project_id)
+def get_project_or_404(project_id: str, db: Session, workspace_id: str) -> Project:
+    project = db.scalar(
+        select(Project)
+        .where(Project.id == project_id)
+        .where(Project.workspace_id == workspace_id)
+    )
 
     if project is None:
         raise HTTPException(
@@ -23,8 +34,12 @@ def get_project_or_404(project_id: str, db: Session) -> Project:
     return project
 
 
-def get_memory_or_404(memory_id: str, db: Session) -> Memory:
-    memory = db.get(Memory, memory_id)
+def get_memory_or_404(memory_id: str, db: Session, workspace_id: str) -> Memory:
+    memory = db.scalar(
+        select(Memory)
+        .where(Memory.id == memory_id)
+        .where(Memory.workspace_id == workspace_id)
+    )
 
     if memory is None:
         raise HTTPException(
@@ -36,18 +51,18 @@ def get_memory_or_404(memory_id: str, db: Session) -> Memory:
 
 
 @router.post("", response_model=MemoryRead, status_code=status.HTTP_201_CREATED)
-def create_memory(payload: MemoryCreate, db: Session = Depends(get_db)) -> Memory:
-    workspace = get_or_create_default_workspace(db)
+def create_memory(
+    payload: MemoryCreate,
+    db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(MEMORIES_CREATE)),
+) -> Memory:
     project_id = payload.project_id
 
     if project_id is not None:
-        project = get_project_or_404(project_id, db)
-        workspace_id = project.workspace_id
-    else:
-        workspace_id = workspace.id
+        get_project_or_404(project_id, db, context.workspace_id)
 
     memory = Memory(
-        workspace_id=workspace_id,
+        workspace_id=context.workspace_id,
         project_id=project_id,
         product=payload.product,
         label=payload.label,
@@ -74,6 +89,8 @@ def create_memory(payload: MemoryCreate, db: Session = Depends(get_db)) -> Memor
             "scope": memory.scope,
             "status": memory.status,
             "source_type": memory.source_type,
+            "auth_user_id": context.user_id,
+            "membership_role": context.role,
         },
     )
 
@@ -90,8 +107,9 @@ def list_memories(
     project_id: str | None = Query(default=None),
     q: str | None = Query(default=None),
     db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(MEMORIES_READ)),
 ) -> list[Memory]:
-    statement = select(Memory)
+    statement = select(Memory).where(Memory.workspace_id == context.workspace_id)
 
     if scope is not None:
         statement = statement.where(Memory.scope == scope)
@@ -117,8 +135,12 @@ def list_memories(
 
 
 @router.get("/{memory_id}", response_model=MemoryRead)
-def get_memory(memory_id: str, db: Session = Depends(get_db)) -> Memory:
-    return get_memory_or_404(memory_id, db)
+def get_memory(
+    memory_id: str,
+    db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(MEMORIES_READ)),
+) -> Memory:
+    return get_memory_or_404(memory_id, db, context.workspace_id)
 
 
 @router.patch("/{memory_id}", response_model=MemoryRead)
@@ -126,8 +148,9 @@ def update_memory(
     memory_id: str,
     payload: MemoryUpdate,
     db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(MEMORIES_UPDATE)),
 ) -> Memory:
-    memory = get_memory_or_404(memory_id, db)
+    memory = get_memory_or_404(memory_id, db, context.workspace_id)
     changes = payload.model_dump(exclude_unset=True)
 
     if "project_id" in changes:
@@ -136,7 +159,7 @@ def update_memory(
         if project_id is None:
             memory.project_id = None
         else:
-            project = get_project_or_404(project_id, db)
+            project = get_project_or_404(project_id, db, context.workspace_id)
             memory.project_id = project.id
             memory.workspace_id = project.workspace_id
 
@@ -154,6 +177,8 @@ def update_memory(
         meta={
             "changes": list(changes.keys()),
             "status": memory.status,
+            "auth_user_id": context.user_id,
+            "membership_role": context.role,
         },
     )
 
@@ -164,15 +189,12 @@ def update_memory(
 
 
 @router.delete("/{memory_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_memory(memory_id: str, db: Session = Depends(get_db)) -> None:
-    memory = db.get(Memory, memory_id)
-
-    if memory is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Memory not found",
-        )
-
+def delete_memory(
+    memory_id: str,
+    db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(MEMORIES_DELETE)),
+) -> None:
+    memory = get_memory_or_404(memory_id, db, context.workspace_id)
     workspace_id = memory.workspace_id
 
     db.execute(delete(Memory).where(Memory.id == memory_id))
@@ -183,6 +205,10 @@ def delete_memory(memory_id: str, db: Session = Depends(get_db)) -> None:
         action="memory.delete",
         resource_type="memory",
         resource_id=memory_id,
+        meta={
+            "auth_user_id": context.user_id,
+            "membership_role": context.role,
+        },
     )
 
     db.commit()

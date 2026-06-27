@@ -1,10 +1,13 @@
 from time import perf_counter
 
 from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.core.permissions import CHAT_SEND
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.dependencies.permissions import require_permission
 from app.dependencies.workspace import CurrentWorkspaceContext, get_current_workspace_context
 from app.models import Chat, Message, ModelRun, Project, Workspace
 from app.models.core import utc_now
@@ -116,7 +119,7 @@ def resolve_or_create_chat(
 def send_chat_message(
     payload: ChatSendRequest,
     db: Session = Depends(get_db),
-    context: CurrentWorkspaceContext = Depends(get_current_workspace_context),
+    context: CurrentWorkspaceContext = Depends(require_permission(CHAT_SEND)),
 ) -> ChatSendResponse:
     started_at = perf_counter()
 

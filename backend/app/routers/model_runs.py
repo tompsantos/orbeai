@@ -2,7 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.permissions import MODEL_RUNS_READ
 from app.db.session import get_db
+from app.dependencies.permissions import require_permission
+from app.dependencies.workspace import CurrentWorkspaceContext
 from app.models import ModelRun
 from app.schemas.model_runs import ModelRunRead
 
@@ -14,8 +17,9 @@ def list_model_runs(
     chat_id: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
     db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(MODEL_RUNS_READ)),
 ) -> list[ModelRun]:
-    statement = select(ModelRun)
+    statement = select(ModelRun).where(ModelRun.workspace_id == context.workspace_id)
 
     if chat_id is not None:
         statement = statement.where(ModelRun.chat_id == chat_id)
@@ -31,8 +35,13 @@ def list_model_runs(
 def get_model_run(
     model_run_id: str,
     db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(MODEL_RUNS_READ)),
 ) -> ModelRun:
-    model_run = db.get(ModelRun, model_run_id)
+    model_run = db.scalar(
+        select(ModelRun)
+        .where(ModelRun.id == model_run_id)
+        .where(ModelRun.workspace_id == context.workspace_id)
+    )
 
     if model_run is None:
         raise HTTPException(

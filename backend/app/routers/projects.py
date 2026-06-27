@@ -2,8 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.permissions import (
+    PROJECTS_CREATE,
+    PROJECTS_READ,
+    PROJECTS_UPDATE,
+)
 from app.db.session import get_db
-from app.dependencies.workspace import CurrentWorkspaceContext, get_current_workspace_context
+from app.dependencies.permissions import require_permission
+from app.dependencies.workspace import CurrentWorkspaceContext
 from app.models import Project
 from app.schemas.projects import ProjectCreate, ProjectRead, ProjectUpdate
 
@@ -30,7 +36,7 @@ def get_project_or_404(project_id: str, workspace_id: str, db: Session) -> Proje
 def create_project(
     payload: ProjectCreate,
     db: Session = Depends(get_db),
-    context: CurrentWorkspaceContext = Depends(get_current_workspace_context),
+    context: CurrentWorkspaceContext = Depends(require_permission(PROJECTS_CREATE)),
 ) -> Project:
     project = Project(
         workspace_id=context.workspace_id,
@@ -51,7 +57,7 @@ def create_project(
 @router.get("", response_model=list[ProjectRead])
 def list_projects(
     db: Session = Depends(get_db),
-    context: CurrentWorkspaceContext = Depends(get_current_workspace_context),
+    context: CurrentWorkspaceContext = Depends(require_permission(PROJECTS_READ)),
 ) -> list[Project]:
     result = db.scalars(
         select(Project)
@@ -66,7 +72,7 @@ def list_projects(
 def get_project(
     project_id: str,
     db: Session = Depends(get_db),
-    context: CurrentWorkspaceContext = Depends(get_current_workspace_context),
+    context: CurrentWorkspaceContext = Depends(require_permission(PROJECTS_READ)),
 ) -> Project:
     return get_project_or_404(project_id, context.workspace_id, db)
 
@@ -76,7 +82,7 @@ def update_project(
     project_id: str,
     payload: ProjectUpdate,
     db: Session = Depends(get_db),
-    context: CurrentWorkspaceContext = Depends(get_current_workspace_context),
+    context: CurrentWorkspaceContext = Depends(require_permission(PROJECTS_UPDATE)),
 ) -> Project:
     project = get_project_or_404(project_id, context.workspace_id, db)
     changes = payload.model_dump(exclude_unset=True)
