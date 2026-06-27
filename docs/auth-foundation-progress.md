@@ -17,7 +17,7 @@ Criar a fundação real de autenticação, usuários, sessões e memberships da 
 - [x] 4.0 preparar branch e plano
 - [x] 4.1 criar modelos de User, WorkspaceMember e AuthSession
 - [x] 4.2 criar migration real
-- [ ] 4.3 criar schemas e services de auth
+- [x] 4.3 criar schemas e services de auth
 - [ ] 4.4 criar endpoints register/login/me/logout
 - [ ] 4.5 proteger rotas principais
 - [ ] 4.6 migrar runtime para current_user/current_workspace
@@ -93,4 +93,38 @@ Status:
 - Migration aplicada em Postgres real.
 - Alembic head atualizado para 20260627_0004.
 - Testes de contrato dos modelos e da migration adicionados.
+
+
+---
+
+## atualização: schemas e services de auth
+
+A etapa 4.3 criou a camada interna de autenticação.
+
+Arquivos adicionados:
+
+- app/core/security.py
+- app/schemas/auth.py
+- app/services/auth.py
+
+Recursos implementados:
+
+- Normalização de email.
+- Hash de senha com PBKDF2-SHA256.
+- Verificação segura de senha.
+- Criação de token opaco.
+- Hash de token para persistência segura.
+- Registro interno de usuário.
+- Criação automática de membership no workspace padrão.
+- Autenticação por email e senha.
+- Criação de sessão.
+- Validação de sessão ativa.
+- Revogação de sessão.
+
+Decisões mantidas:
+
+- Token real não é salvo no banco.
+- Apenas token_hash é persistido.
+- Primeiro usuário registrado vira superuser e owner do workspace padrão.
+- Endpoints públicos ficam para a etapa 4.4.
 
