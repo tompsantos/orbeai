@@ -272,6 +272,10 @@ export interface AuditLog {
   target: string;
   at: string;
   level: "info" | "warn" | "error";
+  product?: string;
+  resourceType?: string;
+  resourceId?: string;
+  meta?: Record<string, unknown>;
 }
 
 export interface UsageMetric {

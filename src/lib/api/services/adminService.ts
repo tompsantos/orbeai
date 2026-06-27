@@ -97,6 +97,10 @@ function toAuditLog(log: BackendAuditLog): AuditLog {
     target: log.resource_id ?? log.resource_type ?? log.id,
     at: log.created_at,
     level: auditLevel(log),
+    product: log.product ?? undefined,
+    resourceType: log.resource_type ?? undefined,
+    resourceId: log.resource_id ?? undefined,
+    meta: log.meta ?? undefined,
   };
 }
 
