@@ -1,8 +1,8 @@
 /**
  * orbeAI — ApiClient
- * Cliente HTTP agnóstico. Em mock mode (default), os services usam repositories locais
- * sobre localStore. Quando VITE_MOCK_MODE=false e VITE_API_BASE_URL existir, este
- * cliente passa a fazer fetch real (não implementado ainda — TODO Fase 1).
+ * Cliente HTTP agnóstico.
+ * Em mock mode, os services continuam usando dados locais.
+ * Com VITE_MOCK_MODE=false e VITE_API_BASE_URL definido, usa backend real.
  */
 
 export interface ApiClientConfig {
@@ -20,16 +20,52 @@ export const apiConfig: ApiClientConfig = {
 export class ApiClient {
   constructor(public readonly config: ApiClientConfig = apiConfig) {}
 
-  get isMock() { return this.config.mockMode; }
+  get isMock() {
+    return this.config.mockMode;
+  }
 
-  async request<T>(_path: string, _init?: RequestInit): Promise<T> {
+  private buildUrl(path: string) {
+    const baseUrl = this.config.baseUrl?.replace(/\/$/, "") ?? "";
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+
+    if (!baseUrl) {
+      throw new Error("VITE_API_BASE_URL não configurado.");
+    }
+
+    return `${baseUrl}${cleanPath}`;
+  }
+
+  async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (this.config.mockMode) {
       throw new Error(
-        "ApiClient.request() não deve ser chamado em mock mode — use os services locais."
+        "ApiClient.request() não deve ser chamado em mock mode. Use VITE_MOCK_MODE=false para backend real.",
       );
     }
-    // TODO Fase 1: implementar fetch real com auth + tratamento de erros.
-    throw new Error("Backend real ainda não conectado. Mantenha VITE_MOCK_MODE=true.");
+
+    const headers = new Headers(init.headers);
+
+    if (init.body && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+
+    const response = await fetch(this.buildUrl(path), {
+      ...init,
+      headers,
+    });
+
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : null;
+
+    if (!response.ok) {
+      const detail =
+        typeof data?.detail === "string"
+          ? data.detail
+          : `Erro HTTP ${response.status}`;
+
+      throw new Error(detail);
+    }
+
+    return data as T;
   }
 }
 
