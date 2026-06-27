@@ -7,85 +7,13 @@ from app.models import FeatureFlag
 from app.schemas.feature_flags import FeatureFlagRead, FeatureFlagUpdate
 from app.services.audit import write_audit_log
 from app.services.bootstrap import get_or_create_default_workspace
+from app.services.feature_flags import ensure_default_flags, get_feature_flag
 
 router = APIRouter(prefix="/feature-flags", tags=["feature-flags"])
 
 
-DEFAULT_FLAGS = [
-    {
-        "key": "real_providers",
-        "label": "Providers reais",
-        "enabled": True,
-        "audience": "interno",
-        "description": "Permite operação com providers reais quando as chaves estão configuradas no backend.",
-    },
-    {
-        "key": "auto_memory",
-        "label": "Memória automática",
-        "enabled": True,
-        "audience": "interno",
-        "description": "Permite criar memórias automaticamente por pedido explícito ou relevância.",
-    },
-    {
-        "key": "memory_context",
-        "label": "Contexto com memória",
-        "enabled": True,
-        "audience": "interno",
-        "description": "Permite usar memórias ativas como contexto persistente no chat.",
-    },
-    {
-        "key": "audit_logs",
-        "label": "Audit logs reais",
-        "enabled": True,
-        "audience": "interno",
-        "description": "Registra eventos operacionais no backend.",
-    },
-    {
-        "key": "artifact_versions",
-        "label": "Versionamento de artifacts",
-        "enabled": True,
-        "audience": "interno",
-        "description": "Permite salvar versões de documentos e artifacts.",
-    },
-]
-
-
-def ensure_default_flags(db: Session, workspace_id: str) -> None:
-    existing = set(
-        db.scalars(
-            select(FeatureFlag.key).where(FeatureFlag.workspace_id == workspace_id)
-        )
-    )
-
-    created = False
-
-    for item in DEFAULT_FLAGS:
-        if item["key"] in existing:
-            continue
-
-        db.add(
-            FeatureFlag(
-                workspace_id=workspace_id,
-                key=item["key"],
-                label=item["label"],
-                enabled=item["enabled"],
-                audience=item["audience"],
-                description=item["description"],
-                meta={"seeded": True},
-            )
-        )
-        created = True
-
-    if created:
-        db.commit()
-
-
 def get_flag_or_404(db: Session, workspace_id: str, key: str) -> FeatureFlag:
-    flag = db.scalar(
-        select(FeatureFlag)
-        .where(FeatureFlag.workspace_id == workspace_id)
-        .where(FeatureFlag.key == key)
-    )
+    flag = get_feature_flag(db, workspace_id, key)
 
     if flag is None:
         raise HTTPException(
@@ -117,8 +45,6 @@ def update_feature_flag(
     db: Session = Depends(get_db),
 ) -> FeatureFlag:
     workspace = get_or_create_default_workspace(db)
-    ensure_default_flags(db, workspace.id)
-
     flag = get_flag_or_404(db, workspace.id, key)
     changes = payload.model_dump(exclude_unset=True)
 
@@ -148,8 +74,6 @@ def update_feature_flag(
 @router.post("/{key}/toggle", response_model=FeatureFlagRead)
 def toggle_feature_flag(key: str, db: Session = Depends(get_db)) -> FeatureFlag:
     workspace = get_or_create_default_workspace(db)
-    ensure_default_flags(db, workspace.id)
-
     flag = get_flag_or_404(db, workspace.id, key)
     flag.enabled = not flag.enabled
 

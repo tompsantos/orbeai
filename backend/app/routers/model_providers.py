@@ -6,6 +6,8 @@ from app.core.config import get_settings
 from app.db.session import get_db
 from app.models import ModelRun
 from app.schemas.model_providers import ModelProviderRead
+from app.services.bootstrap import get_or_create_default_workspace
+from app.services.feature_flags import is_feature_enabled
 
 router = APIRouter(prefix="/model-providers", tags=["model-providers"])
 
@@ -54,6 +56,13 @@ def latency_by_provider(db: Session) -> dict[str, int]:
 def list_model_providers(db: Session = Depends(get_db)) -> list[ModelProviderRead]:
     settings = get_settings()
     latencies = latency_by_provider(db)
+    workspace = get_or_create_default_workspace(db)
+    real_providers_enabled = settings.enable_real_providers and is_feature_enabled(
+        db=db,
+        workspace_id=workspace.id,
+        key="real_providers",
+        default=True,
+    )
 
     openai_has_key = bool(settings.openai_api_key)
     gemini_has_key = bool(settings.gemini_api_key)
@@ -71,7 +80,7 @@ def list_model_providers(db: Session = Depends(get_db)) -> list[ModelProviderRea
         ModelProviderRead(
             slug="openai",
             name="OpenAI",
-            status=real_status(settings.enable_real_providers, openai_has_key),
+            status=real_status(real_providers_enabled, openai_has_key),
             models=[settings.openai_model],
             api_key_status=key_status(openai_has_key),
             latency_ms=latencies.get("openai"),
@@ -83,7 +92,7 @@ def list_model_providers(db: Session = Depends(get_db)) -> list[ModelProviderRea
         ModelProviderRead(
             slug="gemini",
             name="Google Gemini",
-            status=real_status(settings.enable_real_providers, gemini_has_key),
+            status=real_status(real_providers_enabled, gemini_has_key),
             models=[settings.gemini_model],
             api_key_status=key_status(gemini_has_key),
             latency_ms=latencies.get("gemini"),

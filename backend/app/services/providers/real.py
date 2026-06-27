@@ -65,7 +65,6 @@ def run_mock_provider(content: str, mode: str, model_preference: str, memory_con
         user_content=content,
         mode=mode,
         model_preference=model_preference,
-        memory_context=memory_context,
     )
 
     return ProviderExecutionResult(

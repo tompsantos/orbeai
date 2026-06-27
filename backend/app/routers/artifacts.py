@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.db.session import get_db
 from app.models import Artifact, ArtifactVersion, Project
 from app.services.audit import write_audit_log
+from app.services.feature_flags import is_feature_enabled
 from app.schemas.artifacts import (
     ArtifactCreate,
     ArtifactRead,
@@ -173,6 +174,17 @@ def create_artifact_version(
     db: Session = Depends(get_db),
 ) -> ArtifactVersion:
     artifact = get_artifact_or_404(artifact_id, db)
+
+    if not is_feature_enabled(
+        db=db,
+        workspace_id=artifact.workspace_id,
+        key="artifact_versions",
+        default=True,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Artifact versioning disabled by feature flag.",
+        )
 
     version = ArtifactVersion(
         artifact_id=artifact.id,

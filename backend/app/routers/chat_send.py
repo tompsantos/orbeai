@@ -9,6 +9,7 @@ from app.models.core import utc_now
 from app.schemas.chat_send import ChatSendRequest, ChatSendResponse, MemoryEventRead
 from app.services.audit import write_audit_log
 from app.services.auto_memory import maybe_create_auto_memory
+from app.services.feature_flags import is_feature_enabled
 from app.services.bootstrap import get_or_create_default_workspace
 from app.services.memory_context import build_memory_context, select_relevant_memories
 from app.services.orbe_router import resolve_chat_route
@@ -99,31 +100,55 @@ def send_chat_message(
 
     memory_events: list[MemoryEventRead] = []
 
-    auto_memory_event = maybe_create_auto_memory(
-        db=db,
-        chat=chat,
-        user_message_id=user_message.id,
-        content=payload.content,
-    )
-
-    if auto_memory_event is not None:
-        memory_events.append(
-            MemoryEventRead(
-                memory_id=auto_memory_event.memory_id,
-                label=auto_memory_event.label,
-                status=auto_memory_event.status,
-                action=auto_memory_event.action,
-                reason=auto_memory_event.reason,
-            )
-        )
-
-    relevant_memories = select_relevant_memories(
+    auto_memory_enabled = is_feature_enabled(
         db=db,
         workspace_id=chat.workspace_id,
-        project_id=chat.project_id,
-        query=payload.content,
-        limit=6,
+        key="auto_memory",
+        default=True,
     )
+    memory_context_enabled = is_feature_enabled(
+        db=db,
+        workspace_id=chat.workspace_id,
+        key="memory_context",
+        default=True,
+    )
+    real_providers_enabled = is_feature_enabled(
+        db=db,
+        workspace_id=chat.workspace_id,
+        key="real_providers",
+        default=True,
+    )
+
+    if auto_memory_enabled:
+        auto_memory_event = maybe_create_auto_memory(
+            db=db,
+            chat=chat,
+            user_message_id=user_message.id,
+            content=payload.content,
+        )
+
+        if auto_memory_event is not None:
+            memory_events.append(
+                MemoryEventRead(
+                    memory_id=auto_memory_event.memory_id,
+                    label=auto_memory_event.label,
+                    status=auto_memory_event.status,
+                    action=auto_memory_event.action,
+                    reason=auto_memory_event.reason,
+                )
+            )
+
+    relevant_memories = []
+
+    if memory_context_enabled:
+        relevant_memories = select_relevant_memories(
+            db=db,
+            workspace_id=chat.workspace_id,
+            project_id=chat.project_id,
+            query=payload.content,
+            limit=6,
+        )
+
     memory_context = build_memory_context(relevant_memories)
 
     decision = resolve_chat_route(
@@ -134,16 +159,23 @@ def send_chat_message(
     )
 
     provider_error: str | None = None
+    selected_provider_slug = decision.provider_slug if real_providers_enabled else "mock"
 
     try:
         result = execute_provider(
-            provider_slug=decision.provider_slug,
+            provider_slug=selected_provider_slug,
             content=payload.content,
             mode=chat.mode,
             model_preference=chat.model_preference,
             memory_context=memory_context,
         )
         router_reason = decision.reason
+
+        if not real_providers_enabled and decision.provider_slug != "mock":
+            router_reason = (
+                f"{decision.reason} Feature flag real_providers está desligada; "
+                "a execução foi desviada para orbe-mock."
+            )
     except Exception as exc:
         provider_error = f"{type(exc).__name__}: {exc}"
         result = run_mock_provider(
@@ -168,11 +200,14 @@ def send_chat_message(
         meta={
             "source": "chat-send",
             "router_primary_provider": decision.primary_provider_slug,
-            "router_selected_provider": decision.provider_slug,
-            "router_is_fallback": decision.is_fallback,
+            "router_selected_provider": selected_provider_slug,
+            "router_is_fallback": decision.is_fallback or selected_provider_slug != decision.provider_slug,
             "provider_error": provider_error,
             "memory_context_count": len(relevant_memories),
             "memory_event_count": len(memory_events),
+            "feature_auto_memory_enabled": auto_memory_enabled,
+            "feature_memory_context_enabled": memory_context_enabled,
+            "feature_real_providers_enabled": real_providers_enabled,
         },
     )
 
@@ -220,6 +255,9 @@ def send_chat_message(
             "memory_context_count": len(relevant_memories),
             "memory_event_count": len(memory_events),
             "provider_error": provider_error,
+            "feature_auto_memory_enabled": auto_memory_enabled,
+            "feature_memory_context_enabled": memory_context_enabled,
+            "feature_real_providers_enabled": real_providers_enabled,
         },
     )
 
