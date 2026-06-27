@@ -176,3 +176,38 @@ Observação técnica:
 - O workspace padrão orbeone é criado automaticamente enquanto a autenticação real ainda não existe.
 - Esse bootstrap é temporário até a fase de auth/workspaces.
 - O backend segue usando Postgres desde o início, sem SQLite.
+
+---
+
+## atualização: endpoints de chats
+
+A fase 2.2 criou os endpoints reais de conversas da orbeAI.
+
+Status validado:
+
+- POST /v1/chats cria conversa no Postgres.
+- GET /v1/chats lista conversas salvas.
+- GET /v1/chats/{chat_id} busca conversa por id.
+- PATCH /v1/chats/{chat_id} atualiza conversa existente.
+- GET /v1/chats aceita filtro opcional por project_id.
+- Conversas podem ser vinculadas a um projeto.
+- Conversas usam o workspace padrão orbeone enquanto a autenticação real ainda não existe.
+- Testes passaram usando DATABASE_URL apontando para Postgres real via Docker.
+- Curl validou criação e listagem de conversa real ligada ao projeto orbeAI Core.
+- Commit aplicado: 319038b add chats api endpoints.
+
+Observação técnica:
+
+- A lógica de criação do workspace padrão foi movida para app/services/bootstrap.py.
+- O router de projects passou a reutilizar esse serviço.
+- O backend segue usando Postgres desde o início, sem SQLite.
+- A autenticação real e separação de workspaces por usuário ficam para uma fase posterior.
+
+Próximo passo técnico:
+
+- criar endpoints reais de messages;
+- permitir criar mensagem ligada a chat;
+- listar mensagens por chat;
+- preparar base para resposta mock da orbeAI;
+- depois ligar o fluxo chat -> message -> model_run.
+
