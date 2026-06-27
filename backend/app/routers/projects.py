@@ -3,32 +3,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models import Project, Workspace
+from app.models import Project
 from app.schemas.projects import ProjectCreate, ProjectRead, ProjectUpdate
+from app.services.bootstrap import get_or_create_default_workspace
 
 router = APIRouter(prefix="/projects", tags=["projects"])
-
-DEFAULT_WORKSPACE_NAME = "orbeOne"
-DEFAULT_WORKSPACE_SLUG = "orbeone"
-
-
-def get_or_create_default_workspace(db: Session) -> Workspace:
-    workspace = db.scalar(
-        select(Workspace).where(Workspace.slug == DEFAULT_WORKSPACE_SLUG)
-    )
-
-    if workspace is not None:
-        return workspace
-
-    workspace = Workspace(
-        name=DEFAULT_WORKSPACE_NAME,
-        slug=DEFAULT_WORKSPACE_SLUG,
-        plan="internal",
-    )
-    db.add(workspace)
-    db.commit()
-    db.refresh(workspace)
-    return workspace
 
 
 @router.post("", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)
@@ -47,6 +26,7 @@ def create_project(payload: ProjectCreate, db: Session = Depends(get_db)) -> Pro
     db.add(project)
     db.commit()
     db.refresh(project)
+
     return project
 
 
@@ -55,6 +35,7 @@ def list_projects(db: Session = Depends(get_db)) -> list[Project]:
     result = db.scalars(
         select(Project).order_by(Project.created_at.desc())
     )
+
     return list(result)
 
 
