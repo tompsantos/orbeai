@@ -153,6 +153,11 @@ export interface MemoryItem {
   lastUsed: string;
   status: "ativa" | "pendente" | "arquivada";
   projectId?: ID;
+  sensitivity?: "normal" | "sensível" | string;
+  sourceProduct?: string;
+  sourceEntityId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Agent {

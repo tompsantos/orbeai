@@ -80,16 +80,24 @@ function toSource(value: string | null): MemoryItem["source"] {
 }
 
 function toMemoryItem(dto: BackendMemory): MemoryItemExt {
+  const source = toSource(dto.source_type);
+
   return {
     id: dto.id,
     scope: toScope(dto.scope),
     label: dto.label,
     content: dto.content,
-    source: toSource(dto.source_type),
+    source,
     confidence: dto.confidence ?? 0.8,
     lastUsed: dto.updated_at,
     status: toStatus(dto.status),
     projectId: dto.project_id ?? undefined,
+    sensitivity: dto.sensitivity,
+    sourceProduct: dto.source_product ?? undefined,
+    sourceEntityId: dto.source_entity_id ?? undefined,
+    createdAt: dto.created_at,
+    updatedAt: dto.updated_at,
+    reason: source === "chat" && dto.source_entity_id ? "Memória capturada automaticamente a partir do chat" : undefined,
   };
 }
 
