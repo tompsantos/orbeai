@@ -202,3 +202,20 @@ class FeatureFlag(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
+class WorkspaceSettings(Base):
+    __tablename__ = "workspace_settings"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: make_id("wsset"))
+    workspace_id: Mapped[str] = mapped_column(ForeignKey("workspaces.id"), unique=True, index=True, nullable=False)
+    locale: Mapped[str] = mapped_column(String(20), default="pt-BR", nullable=False)
+    timezone: Mapped[str] = mapped_column(String(80), default="America/Sao_Paulo", nullable=False)
+    default_chat_mode: Mapped[str] = mapped_column(String(60), default="strategist", nullable=False)
+    default_model_preference: Mapped[str] = mapped_column(String(80), default="auto", nullable=False)
+    memory_policy: Mapped[str] = mapped_column(String(40), default="balanced", nullable=False)
+    data_retention_days: Mapped[int] = mapped_column(Integer, default=365, nullable=False)
+    allow_exports: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    allow_public_sharing: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    meta: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+

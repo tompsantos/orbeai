@@ -621,3 +621,27 @@ Próximo passo técnico:
 - conectar feature flags ao runtime da orbeAI;
 - depois preparar configurações reais de workspace/admin settings.
 
+---
+
+## atualização: workspace settings reais
+
+A etapa atual transformou o workspace default da orbeAI em uma entidade configurável.
+
+Status implementado:
+
+- Novo model WorkspaceSettings.
+- Nova migration 20260627_0003_workspace_settings.
+- Nova tabela workspace_settings no Postgres.
+- Novo service get_or_create_workspace_settings.
+- Novo endpoint GET /v1/workspace.
+- Novo endpoint PATCH /v1/workspace.
+- Novo endpoint PATCH /v1/workspace/settings.
+- Settings iniciais incluem locale, timezone, modo padrão de chat, preferência padrão de modelo, política de memória, retenção de dados, exportação e compartilhamento público.
+- Alterações de workspace e settings registram audit logs.
+- O workspace default continua sendo orbeOne/orbeone/internal, mas agora possui camada administrativa persistida.
+
+Próximo passo técnico:
+
+- conectar workspace settings ao frontend/admin cockpit;
+- depois usar default_chat_mode e default_model_preference na criação de chats.
+

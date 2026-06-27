@@ -13,6 +13,7 @@ from app.models.core import (
     ModelRun,
     Project,
     Workspace,
+    WorkspaceSettings,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "ModelRun",
     "Project",
     "Workspace",
+    "WorkspaceSettings",
 ]
