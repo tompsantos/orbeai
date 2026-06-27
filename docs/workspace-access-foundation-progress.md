@@ -6,7 +6,7 @@ Branch: feature/workspace-access-foundation
 
 - [x] 5.0 preparar branch e plano
 - [x] 5.1 criar matriz de roles/permissões
-- [ ] 5.2 criar dependency de permissão no backend
+- [x] 5.2 criar dependency de permissão no backend
 - [ ] 5.3 aplicar permissões em rotas sensíveis
 - [ ] 5.4 criar endpoints de membros do workspace
 - [ ] 5.5 criar tela/admin de membros
@@ -79,4 +79,37 @@ Observação:
 
 - Esta etapa ainda não aplica permissões nas rotas.
 - A aplicação nas rotas começa na etapa 5.2 com dependency reutilizável.
+
+
+---
+
+## atualização: dependency de permissões
+
+A etapa 5.2 criou a camada reutilizável de autorização por permissão no backend.
+
+Arquivos criados:
+
+- backend/app/dependencies/permissions.py
+- backend/tests/test_permissions_dependency.py
+
+Funções criadas:
+
+- require_known_permission
+- ensure_workspace_permission
+- require_permission
+- get_current_permissions
+
+Comportamento definido:
+
+- Permissões desconhecidas falham cedo com ValueError.
+- Usuários sem permissão recebem HTTP 403.
+- O erro 403 retorna código permission_denied.
+- A resposta de erro inclui a permissão exigida.
+- require_permission cria uma dependency reutilizável para rotas FastAPI.
+- get_current_permissions permite listar as permissões do usuário atual.
+
+Observação:
+
+- Esta etapa ainda não aplica permissões nas rotas reais.
+- A aplicação nas rotas começa na etapa 5.3.
 
