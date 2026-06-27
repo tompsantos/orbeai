@@ -570,3 +570,25 @@ Próximo passo técnico:
 - melhorar o painel admin para separar audit logs, uso, providers e eventos críticos;
 - depois preparar integrações reais e feature flags server-side.
 
+---
+
+## atualização: admin cockpit real
+
+A etapa atual poliu o painel administrativo para refletir a operação real da orbeAI.
+
+Status implementado:
+
+- /app/admin deixou de apresentar métricas principais como dados mock.
+- O cockpit passa a destacar requisições, tokens, audit logs, eventos críticos e custo estimado.
+- A aba de auditoria passa a mostrar eventos reais vindos de /v1/audit-logs.
+- Os eventos são exibidos com ícones por tipo: chat, memory, artifact e sistema.
+- A aba de uso de modelos mostra agregação por provider.
+- A aba de eventos agrupa audit logs por tipo de recurso.
+- A aba de saúde do sistema foi atualizada para refletir backend, Postgres, providers reais, memória contextual e audit_logs.
+- O reset local foi renomeado para deixar claro que não apaga dados reais do backend.
+
+Próximo passo técnico:
+
+- migrar feature flags para backend real;
+- depois adicionar workspaces/admin settings reais.
+
