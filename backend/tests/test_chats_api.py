@@ -81,3 +81,23 @@ def test_chat_crud_flow() -> None:
     assert updated["title"] == "Conversa atualizada"
     assert updated["mode"] == "technical"
     assert updated["model_preference"] == "gpt-5.5-thinking"
+
+
+def test_delete_chat_removes_chat() -> None:
+    create_response = client.post(
+        "/v1/chats",
+        json={
+            "title": "Chat temporário para deletar",
+            "mode": "strategist",
+            "model_preference": "auto",
+        },
+    )
+
+    assert create_response.status_code == 201
+    chat = create_response.json()
+
+    delete_response = client.delete(f"/v1/chats/{chat['id']}")
+    assert delete_response.status_code == 204
+
+    get_response = client.get(f"/v1/chats/{chat['id']}")
+    assert get_response.status_code == 404

@@ -26,6 +26,22 @@ def build_prompt(content: str, mode: str, model_preference: str) -> str:
     )
 
 
+def estimate_provider_cost(provider_slug: str, input_tokens: int, output_tokens: int) -> float:
+    settings = get_settings()
+
+    if provider_slug == "openai":
+        input_cost = (input_tokens / 1_000_000) * settings.openai_input_price_per_m_tokens
+        output_cost = (output_tokens / 1_000_000) * settings.openai_output_price_per_m_tokens
+        return round(input_cost + output_cost, 8)
+
+    if provider_slug == "gemini":
+        input_cost = (input_tokens / 1_000_000) * settings.gemini_input_price_per_m_tokens
+        output_cost = (output_tokens / 1_000_000) * settings.gemini_output_price_per_m_tokens
+        return round(input_cost + output_cost, 8)
+
+    return 0.0
+
+
 def run_mock_provider(content: str, mode: str, model_preference: str) -> ProviderExecutionResult:
     started_at = perf_counter()
 
@@ -64,24 +80,27 @@ def run_openai_provider(content: str, mode: str, model_preference: str) -> Provi
         input=prompt,
     )
 
-    output_text = getattr(response, "output_text", None)
-
-    if not output_text:
-        output_text = str(response)
+    output_text = getattr(response, "output_text", None) or str(response)
 
     usage = getattr(response, "usage", None)
-
     input_tokens = getattr(usage, "input_tokens", None) if usage else None
     output_tokens = getattr(usage, "output_tokens", None) if usage else None
+
+    final_input_tokens = input_tokens or estimate_tokens(prompt)
+    final_output_tokens = output_tokens or estimate_tokens(output_text)
 
     return ProviderExecutionResult(
         content=output_text,
         provider_name="openai",
         model_name=settings.openai_model,
-        input_tokens=input_tokens or estimate_tokens(prompt),
-        output_tokens=output_tokens or estimate_tokens(output_text),
+        input_tokens=final_input_tokens,
+        output_tokens=final_output_tokens,
         latency_ms=int((perf_counter() - started_at) * 1000),
-        estimated_cost_usd=0.0,
+        estimated_cost_usd=estimate_provider_cost(
+            provider_slug="openai",
+            input_tokens=final_input_tokens,
+            output_tokens=final_output_tokens,
+        ),
     )
 
 
@@ -103,19 +122,23 @@ def run_gemini_provider(content: str, mode: str, model_preference: str) -> Provi
         input=prompt,
     )
 
-    output_text = getattr(interaction, "output_text", None)
+    output_text = getattr(interaction, "output_text", None) or str(interaction)
 
-    if not output_text:
-        output_text = str(interaction)
+    input_tokens = estimate_tokens(prompt)
+    output_tokens = estimate_tokens(output_text)
 
     return ProviderExecutionResult(
         content=output_text,
         provider_name="gemini",
         model_name=settings.gemini_model,
-        input_tokens=estimate_tokens(prompt),
-        output_tokens=estimate_tokens(output_text),
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
         latency_ms=int((perf_counter() - started_at) * 1000),
-        estimated_cost_usd=0.0,
+        estimated_cost_usd=estimate_provider_cost(
+            provider_slug="gemini",
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+        ),
     )
 
 

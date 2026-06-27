@@ -41,6 +41,11 @@ class Settings(BaseSettings):
     gemini_model: str = Field(default="gemini-3.5-flash", validation_alias="GEMINI_MODEL")
     enable_real_providers: bool = Field(default=False, validation_alias="ENABLE_REAL_PROVIDERS")
 
+    openai_input_price_per_m_tokens: float = Field(default=2.50, validation_alias="OPENAI_INPUT_PRICE_PER_M_TOKENS")
+    openai_output_price_per_m_tokens: float = Field(default=15.00, validation_alias="OPENAI_OUTPUT_PRICE_PER_M_TOKENS")
+    gemini_input_price_per_m_tokens: float = Field(default=0.0, validation_alias="GEMINI_INPUT_PRICE_PER_M_TOKENS")
+    gemini_output_price_per_m_tokens: float = Field(default=0.0, validation_alias="GEMINI_OUTPUT_PRICE_PER_M_TOKENS")
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
