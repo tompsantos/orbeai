@@ -747,3 +747,16 @@ Próximo passo técnico:
 - consolidar documentação final da backend foundation;
 - depois fazer revisão técnica fina antes do fechamento da fase 3.
 
+
+---
+
+## documentação consolidada
+
+A documentação operacional da backend foundation foi consolidada em:
+
+    docs/backend-foundation.md
+
+Este arquivo passa a ser a referência limpa para arquitetura, endpoints, runtime, feature flags, workspace settings, políticas, testes e próximos passos.
+
+Este backend-foundation-progress.md permanece como histórico cronológico da evolução da branch.
+
