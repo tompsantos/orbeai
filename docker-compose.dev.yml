@@ -1,0 +1,40 @@
+services:
+  orbeai-postgres:
+    image: postgres:16-alpine
+    container_name: orbeai-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: orbeai
+      POSTGRES_USER: orbeai
+      POSTGRES_PASSWORD: orbeai
+    ports:
+      - "5433:5432"
+    volumes:
+      - orbeai_postgres_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orbeai -d orbeai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  orbeai-api:
+    build:
+      context: ./backend
+    container_name: orbeai-api-dev
+    restart: unless-stopped
+    environment:
+      APP_ENV: local
+      DATABASE_URL: postgresql+psycopg://orbeai:orbeai@orbeai-postgres:5432/orbeai
+      BACKEND_CORS_ORIGINS: http://localhost:8080,http://localhost:5173,http://localhost:3000
+      JWT_SECRET: dev-only-change-me
+    ports:
+      - "8000:8000"
+    depends_on:
+      orbeai-postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/alembic:/app/alembic
+
+volumes:
+  orbeai_postgres_dev:
