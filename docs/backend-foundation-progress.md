@@ -477,3 +477,25 @@ Próximo passo técnico:
 - exibir execuções recentes;
 - preparar painel futuro de custos, latência, erros e auditoria operacional.
 
+---
+
+## atualização: observabilidade por provider
+
+A etapa atual adicionou observabilidade real de providers na tela de modelos.
+
+Status validado:
+
+- /app/models passou a consumir model_runs reais.
+- A tela exibe totais de requisições, tokens, custo estimado e erros.
+- A tela agrega execuções por provider.
+- A tela lista execuções recentes com provider, modelo, tokens, latência, custo e router_reason.
+- O chat visual passou a exibir provider/modelo reais nas bolhas de resposta.
+- OpenAI, Gemini e orbe-mock aparecem como providers operacionais conforme model_runs gravados.
+
+Próximo passo técnico:
+
+- calcular custo estimado server-side por provider/modelo;
+- permitir apagar conversas;
+- ajustar layout da coluna de conversas;
+- depois preparar histórico/uso por workspace e limites de orçamento.
+
