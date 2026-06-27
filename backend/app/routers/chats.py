@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models import Chat, Message, ModelRun, Project
 from app.schemas.chats import ChatCreate, ChatRead, ChatUpdate
+from app.services.audit import write_audit_log
 from app.services.bootstrap import get_or_create_default_workspace
 
 router = APIRouter(prefix="/chats", tags=["chats"])
@@ -124,9 +125,20 @@ def delete_chat(chat_id: str, db: Session = Depends(get_db)) -> None:
             detail="Chat not found",
         )
 
+    workspace_id = chat.workspace_id
+
     db.execute(delete(ModelRun).where(ModelRun.chat_id == chat_id))
     db.execute(delete(Message).where(Message.chat_id == chat_id))
     db.delete(chat)
+
+    write_audit_log(
+        db=db,
+        workspace_id=workspace_id,
+        action="chat.delete",
+        resource_type="chat",
+        resource_id=chat_id,
+    )
+
     db.commit()
 
     return None

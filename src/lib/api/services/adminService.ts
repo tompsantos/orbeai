@@ -22,6 +22,19 @@ interface BackendModelRun {
   created_at: string;
 }
 
+interface BackendAuditLog {
+  id: string;
+  workspace_id: string | null;
+  product: string | null;
+  action: string;
+  resource_type: string | null;
+  resource_id: string | null;
+  request_id: string | null;
+  ip_address: string | null;
+  meta: Record<string, unknown> | null;
+  created_at: string;
+}
+
 function toProviderSlug(value: string | null | undefined): ProviderSlug {
   if (value === "openai") return "openai";
   if (value === "anthropic") return "anthropic";
@@ -66,33 +79,39 @@ function modelRunsToUsage(modelRuns: BackendModelRun[]): UsageMetric[] {
   return Array.from(byDate.values()).sort((a, b) => (a.date > b.date ? 1 : -1));
 }
 
-function modelRunsToAudit(modelRuns: BackendModelRun[]): AuditLog[] {
-  return modelRuns.map((run) => ({
-    id: run.id,
-    actor: "orbeAI backend",
-    action: run.task_type ?? "model.run",
-    target: run.chat_id ?? run.message_id ?? run.id,
-    at: run.created_at,
-    level: run.status === "success" ? "info" : "error",
-  }));
+function auditLevel(log: BackendAuditLog): AuditLog["level"] {
+  const status = String(log.meta?.status ?? "");
+  const action = log.action.toLowerCase();
+
+  if (action.includes("delete") || action.includes("remove") || action.includes("archive")) return "warn";
+  if (status === "error" || action.includes("error")) return "error";
+
+  return "info";
+}
+
+function toAuditLog(log: BackendAuditLog): AuditLog {
+  return {
+    id: log.id,
+    actor: log.product ?? "orbeAI backend",
+    action: log.action,
+    target: log.resource_id ?? log.resource_type ?? log.id,
+    at: log.created_at,
+    level: auditLevel(log),
+  };
 }
 
 export const adminService = {
   async audit(filter?: { level?: AuditLog["level"]; q?: string }): Promise<AuditLog[]> {
     if (!apiClient.isMock) {
-      const modelRuns = await apiClient.request<BackendModelRun[]>("/v1/model-runs?limit=100");
-      let list = modelRunsToAudit(modelRuns);
+      const params = new URLSearchParams();
+
+      params.set("limit", "200");
+      if (filter?.q) params.set("q", filter.q);
+
+      const logs = await apiClient.request<BackendAuditLog[]>(`/v1/audit-logs?${params.toString()}`);
+      let list = logs.map(toAuditLog);
 
       if (filter?.level) list = list.filter((l) => l.level === filter.level);
-
-      if (filter?.q) {
-        const q = filter.q.toLowerCase();
-        list = list.filter((l) =>
-          l.action.toLowerCase().includes(q) ||
-          l.target.toLowerCase().includes(q) ||
-          l.actor.toLowerCase().includes(q),
-        );
-      }
 
       return list.sort((a, b) => (a.at < b.at ? 1 : -1));
     }

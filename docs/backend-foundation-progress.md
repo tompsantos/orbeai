@@ -545,3 +545,28 @@ Próximo passo técnico:
 - registrar ações relevantes como chat.send, memory.create, memory.update, artifact.create, artifact.version, chat.delete;
 - conectar o painel administrativo ao endpoint real de auditoria.
 
+---
+
+## atualização: auditoria real no backend
+
+A etapa atual substituiu a auditoria improvisada/local por audit_logs reais no backend.
+
+Status implementado:
+
+- Novo schema AuditLogRead/AuditLogCreate.
+- Novo serviço interno write_audit_log.
+- Novo endpoint GET /v1/audit-logs.
+- Novo endpoint POST /v1/audit-logs.
+- O painel administrativo passa a consumir /v1/audit-logs quando VITE_MOCK_MODE=false.
+- chat.send registra auditoria com provider, modelo, tokens, model_run_id e memória usada.
+- memory.auto_create registra auditoria quando a orbeAI cria memória automaticamente.
+- memory.create, memory.update e memory.delete registram eventos.
+- artifact.create, artifact.update, artifact.version e artifact.delete registram eventos.
+- chat.delete registra evento de auditoria.
+- O uso por provider continua vindo de model_runs, mas o audit passa a vir de audit_logs.
+
+Próximo passo técnico:
+
+- melhorar o painel admin para separar audit logs, uso, providers e eventos críticos;
+- depois preparar integrações reais e feature flags server-side.
+

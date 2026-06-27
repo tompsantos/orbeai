@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
 from app.models import Artifact, ArtifactVersion, Project
+from app.services.audit import write_audit_log
 from app.schemas.artifacts import (
     ArtifactCreate,
     ArtifactRead,
@@ -86,6 +87,20 @@ def create_artifact(payload: ArtifactCreate, db: Session = Depends(get_db)) -> A
     )
 
     db.add(version)
+
+    write_audit_log(
+        db=db,
+        workspace_id=artifact.workspace_id,
+        action="artifact.create",
+        resource_type="artifact",
+        resource_id=artifact.id,
+        meta={
+            "title": artifact.title,
+            "kind": artifact.kind,
+            "version_number": 1,
+        },
+    )
+
     db.commit()
 
     return get_artifact_or_404(artifact.id, db)
@@ -134,6 +149,18 @@ def update_artifact(
         setattr(artifact, field, value)
 
     db.add(artifact)
+
+    write_audit_log(
+        db=db,
+        workspace_id=artifact.workspace_id,
+        action="artifact.update",
+        resource_type="artifact",
+        resource_id=artifact.id,
+        meta={
+            "changes": list(changes.keys()),
+        },
+    )
+
     db.commit()
 
     return get_artifact_or_404(artifact.id, db)
@@ -155,6 +182,18 @@ def create_artifact_version(
 
     db.add(version)
     db.add(artifact)
+
+    write_audit_log(
+        db=db,
+        workspace_id=artifact.workspace_id,
+        action="artifact.version",
+        resource_type="artifact",
+        resource_id=artifact.id,
+        meta={
+            "version_number": version.version_number,
+        },
+    )
+
     db.commit()
     db.refresh(version)
 
@@ -171,8 +210,19 @@ def delete_artifact(artifact_id: str, db: Session = Depends(get_db)) -> None:
             detail="Artifact not found",
         )
 
+    workspace_id = artifact.workspace_id
+
     db.execute(delete(ArtifactVersion).where(ArtifactVersion.artifact_id == artifact_id))
     db.delete(artifact)
+
+    write_audit_log(
+        db=db,
+        workspace_id=workspace_id,
+        action="artifact.delete",
+        resource_type="artifact",
+        resource_id=artifact_id,
+    )
+
     db.commit()
 
     return None

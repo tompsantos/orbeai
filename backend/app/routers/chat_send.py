@@ -7,6 +7,7 @@ from app.db.session import get_db
 from app.models import Chat, Message, ModelRun, Project
 from app.models.core import utc_now
 from app.schemas.chat_send import ChatSendRequest, ChatSendResponse, MemoryEventRead
+from app.services.audit import write_audit_log
 from app.services.auto_memory import maybe_create_auto_memory
 from app.services.bootstrap import get_or_create_default_workspace
 from app.services.memory_context import build_memory_context, select_relevant_memories
@@ -202,6 +203,41 @@ def send_chat_message(
     )
 
     db.add(model_run)
+
+    write_audit_log(
+        db=db,
+        workspace_id=chat.workspace_id,
+        action="chat.send",
+        resource_type="chat",
+        resource_id=chat.id,
+        meta={
+            "message_id": assistant_message.id,
+            "model_run_id": model_run.id,
+            "provider": result.provider_name,
+            "model": result.model_name,
+            "input_tokens": result.input_tokens,
+            "output_tokens": result.output_tokens,
+            "memory_context_count": len(relevant_memories),
+            "memory_event_count": len(memory_events),
+            "provider_error": provider_error,
+        },
+    )
+
+    for event in memory_events:
+        write_audit_log(
+            db=db,
+            workspace_id=chat.workspace_id,
+            action="memory.auto_create",
+            resource_type="memory",
+            resource_id=event.memory_id,
+            meta={
+                "label": event.label,
+                "status": event.status,
+                "reason": event.reason,
+                "source_message_id": user_message.id,
+            },
+        )
+
     db.commit()
     db.refresh(model_run)
 

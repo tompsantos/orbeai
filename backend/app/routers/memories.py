@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models import Memory, Project
 from app.schemas.memories import MemoryCreate, MemoryRead, MemoryUpdate
+from app.services.audit import write_audit_log
 from app.services.bootstrap import get_or_create_default_workspace
 
 router = APIRouter(prefix="/memories", tags=["memories"])
@@ -61,6 +62,21 @@ def create_memory(payload: MemoryCreate, db: Session = Depends(get_db)) -> Memor
     )
 
     db.add(memory)
+
+    write_audit_log(
+        db=db,
+        workspace_id=memory.workspace_id,
+        action="memory.create",
+        resource_type="memory",
+        resource_id=memory.id,
+        meta={
+            "label": memory.label,
+            "scope": memory.scope,
+            "status": memory.status,
+            "source_type": memory.source_type,
+        },
+    )
+
     db.commit()
     db.refresh(memory)
 
@@ -128,6 +144,19 @@ def update_memory(
         setattr(memory, field, value)
 
     db.add(memory)
+
+    write_audit_log(
+        db=db,
+        workspace_id=memory.workspace_id,
+        action="memory.update",
+        resource_type="memory",
+        resource_id=memory.id,
+        meta={
+            "changes": list(changes.keys()),
+            "status": memory.status,
+        },
+    )
+
     db.commit()
     db.refresh(memory)
 
@@ -144,7 +173,18 @@ def delete_memory(memory_id: str, db: Session = Depends(get_db)) -> None:
             detail="Memory not found",
         )
 
+    workspace_id = memory.workspace_id
+
     db.execute(delete(Memory).where(Memory.id == memory_id))
+
+    write_audit_log(
+        db=db,
+        workspace_id=workspace_id,
+        action="memory.delete",
+        resource_type="memory",
+        resource_id=memory_id,
+    )
+
     db.commit()
 
     return None
