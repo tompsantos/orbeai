@@ -415,3 +415,36 @@ Próximo passo técnico:
 - executar Gemini quando provider primário for gemini;
 - manter fallback automático para orbe-mock se chave faltar ou chamada falhar.
 
+---
+
+## atualização: OpenAI e Gemini reais
+
+A etapa atual habilitou execução real de providers externos no backend da orbeAI.
+
+Status validado:
+
+- OpenAI foi habilitado via OPENAI_API_KEY.
+- Gemini foi habilitado via GEMINI_API_KEY.
+- ENABLE_REAL_PROVIDERS controla se providers reais podem executar.
+- GET /v1/model-providers mostra OpenAI e Gemini como online quando as chaves estão presentes e a flag está ativa.
+- POST /v1/chat/send executa OpenAI quando model_preference=openai.
+- POST /v1/chat/send executa Gemini quando model_preference=gemini.
+- model_runs registra provider real, modelo real, tokens e error_message null em execuções bem-sucedidas.
+- O fallback para orbe-mock segue preservado caso uma chamada real falhe.
+- Anthropic, Qwen, Groq e Local permanecem desligados/não configurados.
+
+Observação técnica:
+
+- As chaves não foram commitadas.
+- .env local permanece fora do Git.
+- docker-compose.dev.yml recebe variáveis por ambiente.
+- backend/pyproject.toml fixa openai e google-genai para rebuild limpo da imagem.
+- O backend foi validado com Docker, Postgres real e chamadas reais de provider.
+
+Próximo passo técnico:
+
+- ajustar a tela de chat para exibir provider/model reais;
+- atualizar a decisão visual do orbeRouter no frontend;
+- remover textos antigos indicando provider mock;
+- depois criar painel de execuções/custos por provider.
+
