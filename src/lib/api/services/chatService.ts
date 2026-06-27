@@ -107,12 +107,14 @@ function toModelKey(value: string | null | undefined): ModelKey {
 }
 
 function toProviderSlug(value: string | null | undefined): ProviderSlug {
-  if (value === "openai") return "openai";
-  if (value === "anthropic") return "anthropic";
-  if (value === "gemini") return "gemini";
-  if (value === "qwen") return "qwen";
-  if (value === "groq") return "groq";
-  if (value === "local") return "local";
+  const normalized = (value ?? "").toLowerCase();
+
+  if (normalized.includes("openai") || normalized.includes("gpt")) return "openai";
+  if (normalized.includes("anthropic") || normalized.includes("claude")) return "anthropic";
+  if (normalized.includes("gemini")) return "gemini";
+  if (normalized.includes("qwen")) return "qwen";
+  if (normalized.includes("groq")) return "groq";
+  if (normalized.includes("local")) return "local";
 
   return "mock";
 }
@@ -141,7 +143,12 @@ function toMessage(dto: BackendMessage): Message {
     role,
     content: dto.content,
     createdAt: dto.created_at,
-    model: toModelKey(dto.model),
+    model: toModelKey(dto.model ?? dto.provider),
+    provider: toProviderSlug(dto.provider),
+    providerName: dto.provider ?? undefined,
+    modelName: dto.model ?? undefined,
+    inputTokens: dto.input_tokens ?? undefined,
+    outputTokens: dto.output_tokens ?? undefined,
   };
 }
 
@@ -151,15 +158,17 @@ function decisionFromBackend(payload: BackendChatSendResponse): RouterDecision {
   return {
     provider,
     model: payload.model,
-    reason: "Resposta gerada pelo backend real da orbeAI usando provider mock.",
-    fallbackChain: ["mock"],
+    reason: `Resposta gerada pelo backend real da orbeAI usando ${payload.provider}/${payload.model}.`,
+    fallbackChain: [provider],
     routingMode: "automático",
     estimatedLatencyMs: 0,
     estimatedCostUsd: 0,
-    qualityTier: "padrão",
+    qualityTier: provider === "mock" ? "padrão" : "premium",
     taskHints: [],
     debugInfo: {
       modelRunId: payload.model_run_id,
+      provider: payload.provider,
+      model: payload.model,
       source: "backend",
     },
   };
@@ -285,6 +294,11 @@ export const chatService = {
           model: payload.model,
           latencyMs: 0,
         },
+        userMessage: toMessage(payload.user_message),
+        assistantMessage: {
+          ...toMessage(payload.assistant_message),
+          modelRunId: payload.model_run_id,
+        },
       };
     }
 
@@ -297,7 +311,7 @@ export const chatService = {
 
     auditService.log({ action: "chat.send", target: chatId, level: "info" });
 
-    return { decision, response };
+    return { decision, response, userMessage: null, assistantMessage: null };
   },
 
   async compare(content: string, models: ModelKey[], mode?: ChatMode) {

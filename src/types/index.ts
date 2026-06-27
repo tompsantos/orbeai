@@ -103,6 +103,12 @@ export interface Message {
   content: string;
   createdAt: string;
   model?: ModelKey;
+  provider?: ProviderSlug;
+  providerName?: string;
+  modelName?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  modelRunId?: string;
   mode?: ChatMode;
   attachments?: Attachment[];
   pinned?: boolean;

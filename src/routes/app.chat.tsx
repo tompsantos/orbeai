@@ -105,15 +105,28 @@ function ChatPage() {
     if (!activeChatId) return;
     setStreaming(true);
     try {
-      const { response, decision } = await chatService.send(activeChatId, text, { mode, model });
+      const { response, decision, assistantMessage } = await chatService.send(activeChatId, text, { mode, model });
       setLastDecision(decision);
-      const asst: Message = {
-        id: `a_${Date.now()}`, chatId: activeChatId, role: "assistant",
+
+      const asst: Message = assistantMessage ?? {
+        id: `a_${Date.now()}`,
+        chatId: activeChatId,
+        role: "assistant",
         content: response.content,
-        createdAt: new Date().toISOString(), model, mode,
+        createdAt: new Date().toISOString(),
+        model,
+        mode,
+        provider: response.provider,
+        providerName: response.provider,
+        modelName: response.model,
       };
+
       setMessages((m) => [...m, asst]);
       await chatService.appendMessage(activeChatId, asst);
+
+      const syncedMessages = await chatService.messages(activeChatId);
+      setMessages(syncedMessages);
+      setChats(await chatService.list());
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Tente outro modelo.";
       toast.error("Provedor indisponível", { description: msg });
@@ -351,7 +364,7 @@ function ChatPage() {
               <span className="text-muted-foreground/40">·</span>
               <kbd className="rounded border border-border/70 bg-muted/60 px-1 py-0.5 text-[10px] font-medium">Shift+Enter</kbd> nova linha
               <span className="text-muted-foreground/40 hidden sm:inline">·</span>
-              <span className="hidden sm:inline">provedor mock até conectar APIs reais</span>
+              <span className="hidden sm:inline">orbeRouter com OpenAI/Gemini reais e fallback seguro</span>
             </div>
           </div>
         </section>
@@ -392,10 +405,15 @@ function Bubble({
     <div className={cn("flex items-start gap-3 animate-orbe-fade", isUser && "justify-end")}>
       {!isUser && <OrbeMark size={28} className="mt-1" />}
       <div className={cn("max-w-[78%]", isUser && "order-2")}>
-        {!isUser && (message.model || message.mode) && (
+        {!isUser && (message.providerName || message.modelName || message.model || message.mode) && (
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 flex flex-wrap gap-1.5">
-            {message.model && <span>{message.model}</span>}
+            {message.providerName && <span>{message.providerName}</span>}
+            {message.modelName && <><span>·</span><span>{message.modelName}</span></>}
+            {!message.modelName && message.model && <><span>·</span><span>{message.model}</span></>}
             {message.mode && <><span>·</span><span>orbe {message.mode}</span></>}
+            {(message.inputTokens || message.outputTokens) && (
+              <><span>·</span><span>{message.inputTokens ?? 0}+{message.outputTokens ?? 0} tokens</span></>
+            )}
           </div>
         )}
         <div className={cn("rounded-2xl px-4 py-3 text-sm leading-relaxed",
