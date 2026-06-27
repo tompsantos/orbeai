@@ -8,11 +8,8 @@ from app.models import Chat, Message, ModelRun, Project
 from app.models.core import utc_now
 from app.schemas.chat_send import ChatSendRequest, ChatSendResponse
 from app.services.bootstrap import get_or_create_default_workspace
-from app.services.providers.mock import (
-    MOCK_MODEL_NAME,
-    MOCK_PROVIDER_NAME,
-    generate_mock_response,
-)
+from app.services.orbe_router import resolve_chat_route
+from app.services.providers.mock import generate_mock_response
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -97,6 +94,13 @@ def send_chat_message(
     db.commit()
     db.refresh(user_message)
 
+    decision = resolve_chat_route(
+        content=payload.content,
+        mode=chat.mode,
+        model_preference=chat.model_preference,
+        routing_mode="automático",
+    )
+
     result = generate_mock_response(
         user_content=payload.content,
         mode=chat.mode,
@@ -107,13 +111,15 @@ def send_chat_message(
         chat_id=chat.id,
         role="assistant",
         content=result.content,
-        provider=MOCK_PROVIDER_NAME,
-        model=MOCK_MODEL_NAME,
+        provider=decision.provider_name,
+        model=decision.model_name,
         input_tokens=result.input_tokens,
         output_tokens=result.output_tokens,
         meta={
             "source": "chat-send",
             "provider_type": "mock",
+            "router_primary_provider": decision.primary_provider_slug,
+            "router_is_fallback": decision.is_fallback,
         },
     )
 
@@ -130,16 +136,16 @@ def send_chat_message(
         workspace_id=chat.workspace_id,
         chat_id=chat.id,
         message_id=assistant_message.id,
-        provider_name=MOCK_PROVIDER_NAME,
-        model_name=MOCK_MODEL_NAME,
+        provider_name=decision.provider_name,
+        model_name=decision.model_name,
         task_type="chat.send",
         status="success",
         latency_ms=latency_ms,
         input_tokens=result.input_tokens,
         output_tokens=result.output_tokens,
-        estimated_cost_usd=0.0,
-        router_reason=result.router_reason,
-        fallback_chain=[MOCK_PROVIDER_NAME],
+        estimated_cost_usd=decision.estimated_cost_usd,
+        router_reason=decision.reason,
+        fallback_chain=decision.fallback_chain,
         error_message=None,
     )
 
@@ -149,8 +155,8 @@ def send_chat_message(
 
     return ChatSendResponse(
         chat_id=chat.id,
-        provider=MOCK_PROVIDER_NAME,
-        model=MOCK_MODEL_NAME,
+        provider=decision.provider_name,
+        model=decision.model_name,
         model_run_id=model_run.id,
         user_message=user_message,
         assistant_message=assistant_message,
