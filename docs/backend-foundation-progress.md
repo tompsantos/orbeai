@@ -244,3 +244,43 @@ Próximo passo técnico:
 - registrar model_run básico;
 - depois substituir o provider mock pelo orbeRouter real.
 
+---
+
+## atualização: chat send mock
+
+A fase 2.4 criou o primeiro fluxo completo de conversa da orbeAI.
+
+Status validado:
+
+- POST /v1/chat/send recebe mensagem do usuário.
+- O endpoint cria um chat novo ou reutiliza um chat existente.
+- A mensagem do usuário é salva na tabela messages.
+- O provider mock gera uma resposta de assistant.
+- A resposta da assistant é salva na tabela messages.
+- Um registro é criado na tabela model_runs.
+- O retorno da API inclui chat_id, provider, model, model_run_id, user_message e assistant_message.
+- Curl validou envio real usando a conversa Primeira conversa real da orbeAI.
+- Commit aplicado: dd7b22c add chat send mock flow.
+
+Estado atual:
+
+- projects persistem em Postgres.
+- chats persistem em Postgres.
+- messages persistem em Postgres.
+- model_runs já registra execuções do fluxo mock.
+- O backend já consegue sustentar uma conversa ponta a ponta sem provider externo.
+
+Observação técnica:
+
+- O provider atual é orbe-mock.
+- O modelo atual é orbe-mock-v0.
+- O fluxo foi preparado para receber o orbeRouter real depois.
+- Nenhuma adaptação para SQLite foi usada.
+- A validação continua usando Postgres real via Docker.
+
+Próximo passo técnico recomendado:
+
+- conectar o frontend ao endpoint POST /v1/chat/send;
+- manter fallback mock visual enquanto a API não estiver acessível;
+- depois criar o orbeRouter real para escolher OpenAI, Gemini, Qwen, Groq ou provider local.
+
