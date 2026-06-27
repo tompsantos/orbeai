@@ -499,3 +499,49 @@ Próximo passo técnico:
 - ajustar layout da coluna de conversas;
 - depois preparar histórico/uso por workspace e limites de orçamento.
 
+---
+
+## atualização: artifacts, memória e governança
+
+As últimas etapas consolidaram partes centrais da orbeAI no backend real.
+
+### Artifacts reais
+
+- O backend passou a expor CRUD de artifacts em /v1/artifacts.
+- Cada artifact passou a ter versões persistidas em artifact_versions.
+- O frontend deixou de depender apenas de localStorage quando VITE_MOCK_MODE=false.
+- Respostas do chat podem ser transformadas em artifacts salvos no Postgres.
+- Artifacts seguem com suporte a criação, edição, versionamento, exportação e remoção.
+
+### Memória real
+
+- O backend passou a expor CRUD de memórias em /v1/memories.
+- Memórias passaram a ser persistidas no Postgres.
+- A tela /app/memory passou a consumir o backend real.
+- Memórias têm escopo, status, confiança, origem, projeto e metadados técnicos.
+- Memórias ativas podem ser usadas como contexto.
+
+### Memória automática e contexto
+
+- O chat passou a detectar pedidos explícitos de memória, como “lembre que...”.
+- Memórias explícitas entram como ativas.
+- Memórias inferidas por relevância entram como pendentes.
+- O chat passou a retornar memory_events quando uma memória é criada.
+- O frontend mostra aviso discreto de memória atualizada.
+- O backend seleciona memórias relevantes e injeta contexto no prompt do provider.
+- A injeção de contexto é limitada, filtrada por relevância e usa apenas memórias ativas.
+
+### Governança de memória
+
+- A tela /app/memory ganhou métricas de total, ativas, pendentes, automáticas e arquivadas.
+- Foi adicionado filtro de memórias automáticas.
+- Cards agora indicam se a memória entra no contexto, aguarda curadoria ou está fora do contexto.
+- Memórias automáticas ficaram visualmente identificadas.
+- O usuário mantém controle para aprovar, arquivar, editar, exportar e remover memórias.
+
+Próximo passo técnico:
+
+- substituir auditoria derivada/local por audit_logs real no backend;
+- registrar ações relevantes como chat.send, memory.create, memory.update, artifact.create, artifact.version, chat.delete;
+- conectar o painel administrativo ao endpoint real de auditoria.
+
