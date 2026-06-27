@@ -448,3 +448,32 @@ Próximo passo técnico:
 - remover textos antigos indicando provider mock;
 - depois criar painel de execuções/custos por provider.
 
+---
+
+## atualização: chat com metadados reais de provider
+
+A etapa atual ajustou o chat visual para refletir melhor as respostas reais do backend.
+
+Status validado:
+
+- Mensagens carregadas do backend agora podem exibir provider real.
+- Mensagens carregadas do backend agora podem exibir modelo real.
+- A tela de chat passou a sincronizar mensagens após POST /v1/chat/send.
+- Respostas vindas de OpenAI e Gemini deixam de aparecer como resposta local/mock.
+- O chat mantém fallback visual seguro para mock mode.
+- A frase antiga sobre provider mock foi substituída por texto compatível com providers reais.
+
+Observação técnica:
+
+- OpenAI e Gemini já executam server-side.
+- O frontend não recebe nem manipula chaves.
+- O backend continua responsável por roteamento, execução, fallback e persistência.
+- A próxima etapa é transformar model_runs em painel de observabilidade por provider.
+
+Próximo passo técnico:
+
+- adicionar leitura de model_runs no frontend;
+- agregar uso por provider;
+- exibir execuções recentes;
+- preparar painel futuro de custos, latência, erros e auditoria operacional.
+
