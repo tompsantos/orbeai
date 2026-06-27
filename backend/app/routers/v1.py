@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.routers import chat_send, chats, messages, model_runs, projects
+from app.routers import chat_send, chats, messages, model_providers, model_runs, projects
 
 router = APIRouter(prefix="/v1")
 
@@ -9,6 +9,7 @@ router.include_router(chats.router)
 router.include_router(messages.router)
 router.include_router(chat_send.router)
 router.include_router(model_runs.router)
+router.include_router(model_providers.router)
 
 
 @router.get("/status")
