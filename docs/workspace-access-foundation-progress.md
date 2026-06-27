@@ -8,7 +8,7 @@ Branch: feature/workspace-access-foundation
 - [x] 5.1 criar matriz de roles/permissões
 - [x] 5.2 criar dependency de permissão no backend
 - [x] 5.3 aplicar permissões em rotas sensíveis
-- [ ] 5.4 criar endpoints de membros do workspace
+- [x] 5.4 criar endpoints de membros do workspace
 - [ ] 5.5 criar tela/admin de membros
 - [ ] 5.6 permitir alteração de role/status
 - [ ] 5.7 proteger ações destrutivas
@@ -168,4 +168,40 @@ Resultado esperado:
 - Rotas protegidas continuam funcionando para owner.
 - Roles sem permissão recebem 403 com code permission_denied.
 - Recursos não vazam entre workspaces.
+
+
+---
+
+## atualização: endpoints de membros do workspace
+
+A etapa 5.4 criou endpoints de leitura para membros do workspace.
+
+Arquivos criados:
+
+- backend/app/schemas/workspace_members.py
+- backend/tests/test_workspace_members_api.py
+
+Arquivo alterado:
+
+- backend/app/routers/workspace.py
+
+Endpoints criados:
+
+- GET /v1/workspace/members/me/access
+- GET /v1/workspace/members
+- GET /v1/workspace/members/{member_id}
+
+Comportamento implementado:
+
+- O usuário atual consegue consultar sua própria role, status e permissões.
+- Usuários com members.read conseguem listar membros do workspace.
+- Usuários com members.read conseguem abrir detalhe de membro.
+- Listagem e detalhe são escopados ao current_workspace.
+- Usuários sem members.read recebem 403.
+- Membros de outro workspace retornam 404.
+
+Observação:
+
+- Esta etapa é apenas leitura.
+- Alteração de role/status fica para a etapa 5.6.
 

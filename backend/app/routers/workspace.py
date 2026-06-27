@@ -1,21 +1,25 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.permissions import (
+    MEMBERS_READ,
     WORKSPACE_READ,
     WORKSPACE_SETTINGS_UPDATE,
     WORKSPACE_UPDATE,
+    list_role_permissions,
 )
 from app.db.session import get_db
 from app.dependencies.permissions import require_permission
 from app.dependencies.workspace import CurrentWorkspaceContext
-from app.models import Workspace
+from app.models import User, Workspace, WorkspaceMember
 from app.schemas.workspace import (
     WorkspaceRead,
     WorkspaceSettingsRead,
     WorkspaceSettingsUpdate,
     WorkspaceUpdate,
 )
+from app.schemas.workspace_members import WorkspaceMemberAccessRead, WorkspaceMemberRead
 from app.services.audit import write_audit_log
 from app.services.workspace_settings import get_or_create_workspace_settings
 
@@ -32,6 +36,44 @@ def to_workspace_read(workspace: Workspace, settings: object) -> WorkspaceRead:
         updated_at=workspace.updated_at,
         settings=WorkspaceSettingsRead.model_validate(settings),
     )
+
+
+def to_member_read(member: WorkspaceMember, user: User) -> WorkspaceMemberRead:
+    return WorkspaceMemberRead(
+        id=member.id,
+        workspace_id=member.workspace_id,
+        user_id=member.user_id,
+        user_email=user.email,
+        user_name=user.name,
+        user_status=user.status,
+        role=member.role,
+        status=member.status,
+        created_at=member.created_at,
+        updated_at=member.updated_at,
+    )
+
+
+def get_workspace_member_or_404(
+    member_id: str,
+    workspace_id: str,
+    db: Session,
+) -> tuple[WorkspaceMember, User]:
+    row = db.execute(
+        select(WorkspaceMember, User)
+        .join(User, User.id == WorkspaceMember.user_id)
+        .where(WorkspaceMember.id == member_id)
+        .where(WorkspaceMember.workspace_id == workspace_id)
+    ).one_or_none()
+
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace member not found",
+        )
+
+    member, user = row
+
+    return member, user
 
 
 @router.get("", response_model=WorkspaceRead)
@@ -116,3 +158,43 @@ def update_workspace_settings(
     db.refresh(settings)
 
     return WorkspaceSettingsRead.model_validate(settings)
+
+
+@router.get("/members/me/access", response_model=WorkspaceMemberAccessRead)
+def get_my_workspace_access(
+    context: CurrentWorkspaceContext = Depends(require_permission(WORKSPACE_READ)),
+) -> WorkspaceMemberAccessRead:
+    return WorkspaceMemberAccessRead(
+        workspace_id=context.workspace_id,
+        member_id=context.membership.id,
+        user_id=context.user_id,
+        role=context.role,
+        status=context.membership.status,
+        permissions=list_role_permissions(context.role),
+    )
+
+
+@router.get("/members", response_model=list[WorkspaceMemberRead])
+def list_workspace_members(
+    db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(MEMBERS_READ)),
+) -> list[WorkspaceMemberRead]:
+    rows = db.execute(
+        select(WorkspaceMember, User)
+        .join(User, User.id == WorkspaceMember.user_id)
+        .where(WorkspaceMember.workspace_id == context.workspace_id)
+        .order_by(WorkspaceMember.created_at.asc())
+    ).all()
+
+    return [to_member_read(member, user) for member, user in rows]
+
+
+@router.get("/members/{member_id}", response_model=WorkspaceMemberRead)
+def get_workspace_member(
+    member_id: str,
+    db: Session = Depends(get_db),
+    context: CurrentWorkspaceContext = Depends(require_permission(MEMBERS_READ)),
+) -> WorkspaceMemberRead:
+    member, user = get_workspace_member_or_404(member_id, context.workspace_id, db)
+
+    return to_member_read(member, user)
