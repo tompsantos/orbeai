@@ -24,7 +24,7 @@ Criar a fundação real de autenticação, usuários, sessões e memberships da 
 - [x] 4.7 integrar frontend com sessão real
 - [ ] 4.8 criar telas de login/cadastro
 - [x] 4.9 testar e revisar
-- [ ] 4.10 preparar release interna
+- [x] 4.10 preparar release interna
 
 ## decisões iniciais
 
@@ -329,4 +329,28 @@ Resultado esperado:
 - Usuário sem sessão não acessa o cockpit visualmente.
 - Usuário autenticado vê dados reais no menu.
 - Logout encerra sessão e impede retorno direto para /app.
+
+
+---
+
+## atualização: release interna da auth foundation
+
+A etapa 4.10 preparou a release interna da fundação de autenticação.
+
+Arquivo criado:
+
+- docs/auth-foundation-release.md
+
+Conteúdo documentado:
+
+- Escopo entregue.
+- Rotas públicas e protegidas.
+- Execução local recomendada.
+- Nota operacional sobre porta 8000 e container antigo.
+- Checklist de aceite.
+- Pendências futuras.
+
+Status:
+
+- Auth foundation pronta para revisão final e merge.
 
