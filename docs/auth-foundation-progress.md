@@ -16,7 +16,7 @@ Criar a fundação real de autenticação, usuários, sessões e memberships da 
 
 - [x] 4.0 preparar branch e plano
 - [x] 4.1 criar modelos de User, WorkspaceMember e AuthSession
-- [ ] 4.2 criar migration real
+- [x] 4.2 criar migration real
 - [ ] 4.3 criar schemas e services de auth
 - [ ] 4.4 criar endpoints register/login/me/logout
 - [ ] 4.5 proteger rotas principais
@@ -62,4 +62,35 @@ Decisões aplicadas:
 - AuthSession usa token_hash, não token em texto puro.
 - AuthSession possui expiração e revogação.
 - A migration real fica para a etapa 4.2.
+
+
+---
+
+## atualização: migration real de auth
+
+A etapa 4.2 criou e aplicou a migration real da fundação de autenticação.
+
+Migration adicionada:
+
+- 20260627_0004_auth_foundation.py
+
+Tabelas criadas:
+
+- users
+- workspace_members
+- auth_sessions
+
+Constraints principais:
+
+- users.email único.
+- workspace_members com par workspace_id + user_id único.
+- auth_sessions.token_hash único.
+- workspace_members referencia workspaces e users.
+- auth_sessions referencia users.
+
+Status:
+
+- Migration aplicada em Postgres real.
+- Alembic head atualizado para 20260627_0004.
+- Testes de contrato dos modelos e da migration adicionados.
 
