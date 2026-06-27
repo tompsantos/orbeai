@@ -592,3 +592,32 @@ Próximo passo técnico:
 - migrar feature flags para backend real;
 - depois adicionar workspaces/admin settings reais.
 
+---
+
+## atualização: feature flags server-side
+
+A etapa atual migrou feature flags do localStore para backend real.
+
+Status implementado:
+
+- Novo model FeatureFlag.
+- Nova migration 20260627_0002_feature_flags.
+- Nova tabela feature_flags no Postgres.
+- Novo endpoint GET /v1/feature-flags.
+- Novo endpoint PATCH /v1/feature-flags/{key}.
+- Novo endpoint POST /v1/feature-flags/{key}/toggle.
+- Flags padrão são criadas automaticamente por workspace.
+- O admin cockpit passa a consumir flags reais quando VITE_MOCK_MODE=false.
+- Alterações de flags persistem no Postgres.
+- Toggle de flag registra audit log feature_flag.toggle.
+
+Observação:
+
+- Nesta etapa as flags viraram configuração persistente e governável.
+- A próxima etapa pode plugar essas flags em comportamento real do runtime, como habilitar/desabilitar memória automática, contexto persistente, artifacts e providers reais.
+
+Próximo passo técnico:
+
+- conectar feature flags ao runtime da orbeAI;
+- depois preparar configurações reais de workspace/admin settings.
+

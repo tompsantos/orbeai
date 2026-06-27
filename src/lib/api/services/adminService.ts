@@ -35,6 +35,19 @@ interface BackendAuditLog {
   created_at: string;
 }
 
+interface BackendFeatureFlag {
+  id: string;
+  workspace_id: string;
+  key: string;
+  label: string;
+  enabled: boolean;
+  audience: string;
+  description: string | null;
+  meta: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
 function toProviderSlug(value: string | null | undefined): ProviderSlug {
   if (value === "openai") return "openai";
   if (value === "anthropic") return "anthropic";
@@ -44,6 +57,23 @@ function toProviderSlug(value: string | null | undefined): ProviderSlug {
   if (value === "local") return "local";
 
   return "mock";
+}
+
+function toAudience(value: string): FeatureFlag["audience"] {
+  if (value === "todos" || value === "interno" || value === "beta") {
+    return value;
+  }
+
+  return "interno";
+}
+
+function toFeatureFlag(flag: BackendFeatureFlag): FeatureFlag {
+  return {
+    key: flag.key,
+    label: flag.label,
+    enabled: flag.enabled,
+    audience: toAudience(flag.audience),
+  };
 }
 
 function dateKey(value: string) {
@@ -149,10 +179,23 @@ export const adminService = {
   },
 
   async flags(): Promise<FeatureFlag[]> {
+    if (!apiClient.isMock) {
+      const flags = await apiClient.request<BackendFeatureFlag[]>("/v1/feature-flags");
+      return flags.map(toFeatureFlag);
+    }
+
     return localStore.get<FeatureFlag[]>(STORAGE_KEYS.featureFlags, mockFlags);
   },
 
   async toggleFlag(key: string): Promise<FeatureFlag | null> {
+    if (!apiClient.isMock) {
+      const flag = await apiClient.request<BackendFeatureFlag>(`/v1/feature-flags/${encodeURIComponent(key)}/toggle`, {
+        method: "POST",
+      });
+
+      return toFeatureFlag(flag);
+    }
+
     const list = localStore.get<FeatureFlag[]>(STORAGE_KEYS.featureFlags, mockFlags);
     const idx = list.findIndex((f) => f.key === key);
 
