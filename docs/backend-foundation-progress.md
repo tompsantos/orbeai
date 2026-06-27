@@ -211,3 +211,36 @@ Próximo passo técnico:
 - preparar base para resposta mock da orbeAI;
 - depois ligar o fluxo chat -> message -> model_run.
 
+---
+
+## atualização: endpoints de messages
+
+A fase 2.3 criou os endpoints reais de mensagens da orbeAI.
+
+Status validado:
+
+- POST /v1/chats/{chat_id}/messages cria mensagem no Postgres.
+- GET /v1/chats/{chat_id}/messages lista mensagens de uma conversa.
+- GET /v1/messages/{message_id} busca mensagem por id.
+- Mensagens ficam vinculadas a um chat real.
+- Ao criar uma mensagem, o updated_at do chat é atualizado.
+- Testes passaram usando DATABASE_URL apontando para Postgres real via Docker.
+- Curl validou criação e listagem de mensagem real dentro da conversa Primeira conversa real da orbeAI.
+- Commit aplicado: 40b8f90 add messages api endpoints.
+
+Estado atual da fase 2:
+
+- projects persistem em Postgres.
+- chats persistem em Postgres.
+- messages persistem em Postgres.
+- O backend já consegue guardar a estrutura principal de conversa da orbeAI.
+
+Próximo passo técnico:
+
+- criar endpoint de envio inteligente: POST /v1/chat/send;
+- salvar mensagem do usuário;
+- gerar resposta mock da orbeAI;
+- salvar mensagem assistant;
+- registrar model_run básico;
+- depois substituir o provider mock pelo orbeRouter real.
+
