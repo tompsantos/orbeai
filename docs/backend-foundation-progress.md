@@ -383,3 +383,35 @@ Próximo passo técnico:
 - fazer POST /v1/chat/send usar a decisão do orbeRouter backend;
 - manter orbe-mock como executor seguro até providers reais serem implementados.
 
+---
+
+## atualização: orbeRouter backend
+
+A etapa atual moveu a decisão do orbeRouter para o backend.
+
+Status validado:
+
+- O backend expõe POST /v1/router/resolve.
+- O orbeRouter backend analisa conteúdo, modo, preferência de modelo e routing_mode.
+- O roteador decide provider primário ideal.
+- Enquanto providers reais ainda não executam chamadas, o executor seguro segue sendo orbe-mock.
+- POST /v1/chat/send passou a registrar decisão do orbeRouter em model_runs.
+- model_runs agora registram router_reason, fallback_chain e provider/model usados.
+- A etapa foi validada com Postgres real via Docker.
+- O frontend continua usando o backend real por proxy /api.
+
+Observação técnica:
+
+- Esta etapa segue o plano de construção documentado.
+- A decisão do provider já está no backend.
+- O próximo passo é habilitar execução real para OpenAI e Gemini.
+- Anthropic, Qwen, Groq e Local permanecem como placeholder/não configurado por enquanto.
+
+Próximo passo técnico:
+
+- adicionar OpenAI SDK e Google Gen AI SDK no backend;
+- configurar OPENAI_API_KEY e GEMINI_API_KEY por variável de ambiente;
+- executar OpenAI quando provider primário for openai;
+- executar Gemini quando provider primário for gemini;
+- manter fallback automático para orbe-mock se chave faltar ou chamada falhar.
+
