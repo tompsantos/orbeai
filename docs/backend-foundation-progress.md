@@ -1,0 +1,90 @@
+# orbeAI — progresso da fase 1: fundação do backend
+
+> branch: `feature/backend-foundation`  
+> início: 2026-06-27  
+> objetivo: criar a base real da API da orbeAI com FastAPI, Postgres, Docker e healthcheck.
+
+## status atual
+
+```text
+[~] fase 1 em andamento
+```
+
+## já concluído nesta branch
+
+- [x] `main` recebeu o fast-forward da branch `refinar-ui-orbeai`.
+- [x] Branch `feature/backend-foundation` criada a partir da `main` atualizada.
+- [x] Pasta `backend/` criada.
+- [x] Projeto Python configurado em `backend/pyproject.toml`.
+- [x] App FastAPI inicial criado em `backend/app/main.py`.
+- [x] Configuração central criada em `backend/app/core/config.py`.
+- [x] Logging básico estruturável criado em `backend/app/core/logging.py`.
+- [x] Endpoint `GET /health` criado.
+- [x] Endpoint `GET /v1/status` criado.
+- [x] CORS configurado para desenvolvimento local.
+- [x] SQLAlchemy preparado.
+- [x] Alembic preparado.
+- [x] Dockerfile do backend criado.
+- [x] `docker-compose.dev.yml` criado com API + Postgres.
+- [x] `.env.example` atualizado com variáveis do backend.
+- [x] Testes básicos de healthcheck criados.
+- [x] README do backend criado.
+
+## pendente para fechar a fase 1
+
+- [ ] Rodar o backend no Codespaces.
+- [ ] Validar `GET /health` via terminal.
+- [ ] Validar `GET /v1/status` via terminal.
+- [ ] Rodar testes Python.
+- [ ] Rodar Docker Compose.
+- [ ] Criar primeira migration real.
+- [ ] Atualizar checklist principal marcando fase 1 como parcialmente concluída.
+
+## comandos de teste local
+
+### modo Python direto
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Em outro terminal:
+
+```bash
+curl http://localhost:8000/health
+curl http://localhost:8000/v1/status
+```
+
+### modo Docker Compose
+
+Na raiz do repositório:
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+Teste:
+
+```bash
+curl http://localhost:8000/health
+curl http://localhost:8000/v1/status
+```
+
+## próximo passo técnico
+
+Validar esta fundação no Codespaces. Depois disso, avançar para modelos reais do banco:
+
+1. `workspaces`
+2. `users`
+3. `projects`
+4. `chats`
+5. `messages`
+6. `artifacts`
+7. `memories`
+8. `audit_logs`
+9. `model_runs`
+10. `api_keys`
