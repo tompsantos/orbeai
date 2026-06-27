@@ -354,3 +354,32 @@ Próximo passo técnico:
 - alimentar tela de modelos/orbeRouter com dados reais;
 - depois iniciar implementação do orbeRouter backend.
 
+---
+
+## atualização: providers e tela de modelos
+
+A etapa atual conectou a tela de modelos/orbeRouter ao backend real.
+
+Status validado:
+
+- O backend expõe GET /v1/model-providers.
+- O provider orbe-mock aparece como online/configurado.
+- OpenAI, Anthropic, Gemini, Qwen, Groq e Local aparecem como placeholders.
+- modelService.providers passou a consumir o backend real quando VITE_MOCK_MODE=false.
+- A tela /app/models passa a refletir dados vindos da API.
+- O cockpit continua consumindo status dos providers pelo service layer.
+
+Observação técnica:
+
+- Esta etapa segue o plano de construção documentado.
+- Ainda não há chamada real a providers externos.
+- O objetivo desta fase é preparar a camada de observabilidade e decisão antes de plugar APIs reais.
+- O próximo passo é mover a decisão do orbeRouter para o backend.
+
+Próximo passo técnico:
+
+- criar serviço backend do orbeRouter;
+- criar endpoint POST /v1/router/resolve;
+- fazer POST /v1/chat/send usar a decisão do orbeRouter backend;
+- manter orbe-mock como executor seguro até providers reais serem implementados.
+
