@@ -760,3 +760,22 @@ Este arquivo passa a ser a referência limpa para arquitetura, endpoints, runtim
 
 Este backend-foundation-progress.md permanece como histórico cronológico da evolução da branch.
 
+
+---
+
+## atualização: revisão técnica fina
+
+A etapa atual adicionou uma revisão de contrato para a backend foundation.
+
+Status implementado:
+
+- Novo teste backend/tests/test_backend_foundation_contract.py.
+- Validação das rotas essenciais registradas no OpenAPI.
+- Validação dos métodos HTTP principais.
+- Validação explícita de que endpoint budget não está registrado.
+- Novo documento docs/backend-foundation-review.md com critérios de revisão.
+
+Próximo passo técnico:
+
+- preparar merge/release interna da backend foundation.
+
