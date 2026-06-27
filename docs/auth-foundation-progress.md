@@ -21,7 +21,7 @@ Criar a fundação real de autenticação, usuários, sessões e memberships da 
 - [x] 4.4 criar endpoints register/login/me/logout
 - [x] 4.5 proteger rotas principais
 - [x] 4.6 migrar runtime para current_user/current_workspace
-- [ ] 4.7 integrar frontend com sessão real
+- [x] 4.7 integrar frontend com sessão real
 - [ ] 4.8 criar telas de login/cadastro
 - [ ] 4.9 testar e revisar
 - [ ] 4.10 preparar release interna
@@ -232,4 +232,29 @@ Observação:
 
 - A migração completa de todos os recursos para escopo por workspace segue nas próximas etapas.
 - Nesta etapa, o foco foi workspace, projects e chat runtime.
+
+
+---
+
+## atualização: frontend com sessão real
+
+A etapa 4.7 integrou o frontend com a sessão real do backend.
+
+Arquivos adicionados/alterados:
+
+- src/lib/auth/session.ts
+- src/lib/api/client.ts
+
+Comportamento implementado:
+
+- Frontend salva access_token em localStorage.
+- ApiClient injeta Authorization: Bearer nos requests.
+- ApiClient limpa sessão local em caso de 401.
+- Ambiente local pode usar dev auth bridge para registrar/logar automaticamente.
+- O token usado pelo frontend é token real criado pelo backend.
+
+Observação:
+
+- A tela visual de login/cadastro fica para a etapa 4.8.
+- O dev auth bridge só deve ser usado em desenvolvimento local.
 

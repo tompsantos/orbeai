@@ -5,6 +5,8 @@
  * Com VITE_MOCK_MODE=false e VITE_API_BASE_URL definido, usa backend real.
  */
 
+import { clearAuthSession, ensureDevAuthSession, getAuthToken } from "../auth/session";
+
 export interface ApiClientConfig {
   baseUrl?: string;
   mockMode: boolean;
@@ -35,6 +37,10 @@ export class ApiClient {
     return `${baseUrl}${cleanPath}`;
   }
 
+  private async resolveAuthToken() {
+    return getAuthToken() ?? ensureDevAuthSession(this.config.baseUrl ?? "");
+  }
+
   async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (this.config.mockMode) {
       throw new Error(
@@ -48,6 +54,14 @@ export class ApiClient {
       headers.set("Content-Type", "application/json");
     }
 
+    if (!headers.has("Authorization")) {
+      const token = await this.resolveAuthToken();
+
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+    }
+
     const response = await fetch(this.buildUrl(path), {
       ...init,
       headers,
@@ -57,6 +71,10 @@ export class ApiClient {
     const data = text ? JSON.parse(text) : null;
 
     if (!response.ok) {
+      if (response.status === 401) {
+        clearAuthSession();
+      }
+
       const detail =
         typeof data?.detail === "string"
           ? data.detail
