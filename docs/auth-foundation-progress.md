@@ -23,7 +23,7 @@ Criar a fundação real de autenticação, usuários, sessões e memberships da 
 - [x] 4.6 migrar runtime para current_user/current_workspace
 - [x] 4.7 integrar frontend com sessão real
 - [ ] 4.8 criar telas de login/cadastro
-- [ ] 4.9 testar e revisar
+- [x] 4.9 testar e revisar
 - [ ] 4.10 preparar release interna
 
 ## decisões iniciais
@@ -300,4 +300,33 @@ Resultado validado:
 - Login/cadastro funcionaram no frontend.
 - Providers reais voltaram a aparecer como ativos no cockpit.
 - OpenAI e Gemini subiram corretamente quando o backend foi iniciado com ENABLE_REAL_PROVIDERS=true.
+
+
+---
+
+## atualização: user menu, logout e proteção visual
+
+A etapa 4.9 conectou a experiência visual do app à sessão real.
+
+Arquivos alterados:
+
+- src/routes/app.tsx
+- src/components/layout/AppShell.tsx
+
+Comportamento implementado:
+
+- A rota /app redireciona para /login quando não existe token local.
+- O AppShell valida a presença de sessão local ao montar.
+- O header passa a exibir nome/email do usuário autenticado.
+- O avatar passa a usar iniciais reais do usuário.
+- O menu remove o texto fixo orbeOne Admin.
+- O botão sair chama POST /v1/auth/logout por meio do authService.
+- A sessão local é limpa após logout.
+- O usuário é redirecionado para /login depois de sair.
+
+Resultado esperado:
+
+- Usuário sem sessão não acessa o cockpit visualmente.
+- Usuário autenticado vê dados reais no menu.
+- Logout encerra sessão e impede retorno direto para /app.
 
