@@ -645,3 +645,26 @@ Próximo passo técnico:
 - conectar workspace settings ao frontend/admin cockpit;
 - depois usar default_chat_mode e default_model_preference na criação de chats.
 
+---
+
+## atualização: workspace settings no frontend
+
+A etapa atual conectou as configurações reais de workspace ao frontend.
+
+Status implementado:
+
+- Novos tipos WorkspaceInfo e WorkspaceSettings no frontend.
+- adminService passou a consumir GET /v1/workspace.
+- adminService passou a atualizar PATCH /v1/workspace.
+- adminService passou a atualizar PATCH /v1/workspace/settings.
+- /app/admin ganhou a aba Workspace.
+- A aba Workspace permite editar nome, plano, timezone, modo padrão de chat, preferência padrão de modelo, política de memória, retenção de dados, exportações e compartilhamento público.
+- As alterações são persistidas no Postgres.
+- As alterações geram audit logs no backend.
+- O admin cockpit passou a configurar o workspace, não apenas observar telemetria.
+
+Próximo passo técnico:
+
+- usar default_chat_mode e default_model_preference nas criações de chat;
+- depois preparar políticas reais de workspace, como allow_exports e memory_policy.
+

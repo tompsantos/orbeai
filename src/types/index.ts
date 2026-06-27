@@ -292,3 +292,30 @@ export interface FeatureFlag {
   enabled: boolean;
   audience: "todos" | "interno" | "beta";
 }
+
+export interface WorkspaceSettings {
+  id: ID;
+  workspaceId: ID;
+  locale: string;
+  timezone: string;
+  defaultChatMode: string;
+  defaultModelPreference: string;
+  memoryPolicy: string;
+  dataRetentionDays: number;
+  allowExports: boolean;
+  allowPublicSharing: boolean;
+  meta?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkspaceInfo {
+  id: ID;
+  name: string;
+  slug: string;
+  plan: string;
+  createdAt: string;
+  updatedAt: string;
+  settings: WorkspaceSettings;
+}
+

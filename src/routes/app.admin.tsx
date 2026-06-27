@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { adminService } from "@/lib/api";
 import { localStore } from "@/lib/storage/localStore";
-import type { AuditLog, FeatureFlag, UsageMetric } from "@/types";
+import type { AuditLog, FeatureFlag, UsageMetric, WorkspaceInfo } from "@/types";
 import {
   Activity,
   AlertTriangle,
@@ -17,6 +17,9 @@ import {
   Clock,
   Database,
   FileText,
+  Globe2,
+  Save,
+  Settings,
   RefreshCw,
   Route as RouteIcon,
   ShieldCheck,
@@ -70,6 +73,16 @@ function AdminPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [usage, setUsage] = useState<UsageMetric[]>([]);
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
+  const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null);
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [workspacePlan, setWorkspacePlan] = useState("");
+  const [workspaceTimezone, setWorkspaceTimezone] = useState("America/Sao_Paulo");
+  const [defaultChatMode, setDefaultChatMode] = useState("strategist");
+  const [defaultModelPreference, setDefaultModelPreference] = useState("auto");
+  const [memoryPolicy, setMemoryPolicy] = useState("balanced");
+  const [dataRetentionDays, setDataRetentionDays] = useState("365");
+  const [allowExports, setAllowExports] = useState(true);
+  const [allowPublicSharing, setAllowPublicSharing] = useState(false);
   const [q, setQ] = useState("");
   const [level, setLevel] = useState<AuditLog["level"] | "todos">("todos");
   const [resetOpen, setResetOpen] = useState(false);
@@ -79,15 +92,26 @@ function AdminPage() {
     setLoading(true);
 
     try {
-      const [a, u, f] = await Promise.all([
+      const [a, u, f, w] = await Promise.all([
         adminService.audit({ q: q || undefined, level: level === "todos" ? undefined : level }),
         adminService.usage(),
         adminService.flags(),
+        adminService.workspace(),
       ]);
 
       setLogs(a);
       setUsage(u);
       setFlags(f);
+      setWorkspace(w);
+      setWorkspaceName(w.name);
+      setWorkspacePlan(w.plan);
+      setWorkspaceTimezone(w.settings.timezone);
+      setDefaultChatMode(w.settings.defaultChatMode);
+      setDefaultModelPreference(w.settings.defaultModelPreference);
+      setMemoryPolicy(w.settings.memoryPolicy);
+      setDataRetentionDays(String(w.settings.dataRetentionDays));
+      setAllowExports(w.settings.allowExports);
+      setAllowPublicSharing(w.settings.allowPublicSharing);
     } finally {
       setLoading(false);
     }
@@ -147,6 +171,38 @@ function AdminPage() {
     await refresh();
   }
 
+  async function onSaveWorkspace() {
+    const retention = Number(dataRetentionDays);
+
+    if (!Number.isFinite(retention) || retention < 1) {
+      toast.error("Retenção de dados inválida");
+      return;
+    }
+
+    const updatedWorkspace = await adminService.updateWorkspace({
+      name: workspaceName,
+      plan: workspacePlan,
+    });
+
+    const updatedSettings = await adminService.updateWorkspaceSettings({
+      timezone: workspaceTimezone,
+      defaultChatMode,
+      defaultModelPreference,
+      memoryPolicy,
+      dataRetentionDays: retention,
+      allowExports,
+      allowPublicSharing,
+    });
+
+    setWorkspace({
+      ...updatedWorkspace,
+      settings: updatedSettings,
+    });
+
+    toast.success("Workspace atualizado");
+    await refresh();
+  }
+
   function onReset() {
     localStore.resetDemoData();
     toast.success("Dados locais de demonstração resetados");
@@ -187,6 +243,7 @@ function AdminPage() {
           <TabsTrigger value="usage">Uso de modelos</TabsTrigger>
           <TabsTrigger value="events">Eventos</TabsTrigger>
           <TabsTrigger value="flags">Feature flags</TabsTrigger>
+          <TabsTrigger value="workspace">Workspace</TabsTrigger>
           <TabsTrigger value="health">Saúde do sistema</TabsTrigger>
         </TabsList>
 
@@ -323,6 +380,132 @@ function AdminPage() {
                 </div>
               </GlassCard>
             ))}
+          </div>
+        </TabsContent>
+
+
+        <TabsContent value="workspace" className="mt-5 space-y-3">
+          <div className="grid lg:grid-cols-[1fr_320px] gap-3">
+            <GlassCard hoverable={false}>
+              <div className="flex items-center gap-2 mb-4">
+                <Settings className="size-4 text-[var(--orbe-blue)]" />
+                <div>
+                  <div className="font-semibold">Configurações do workspace</div>
+                  <div className="text-xs text-muted-foreground">Preferências persistidas no backend para a operação da orbeAI.</div>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-3">
+                <label className="space-y-1.5">
+                  <span className="text-xs text-muted-foreground">Nome</span>
+                  <Input value={workspaceName} onChange={(e) => setWorkspaceName(e.target.value)} />
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-xs text-muted-foreground">Plano</span>
+                  <Input value={workspacePlan} onChange={(e) => setWorkspacePlan(e.target.value)} />
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-xs text-muted-foreground">Timezone</span>
+                  <Input value={workspaceTimezone} onChange={(e) => setWorkspaceTimezone(e.target.value)} />
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-xs text-muted-foreground">Retenção de dados, dias</span>
+                  <Input value={dataRetentionDays} onChange={(e) => setDataRetentionDays(e.target.value)} inputMode="numeric" />
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-xs text-muted-foreground">Modo padrão do chat</span>
+                  <Select value={defaultChatMode} onValueChange={setDefaultChatMode}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="strategist">strategist</SelectItem>
+                      <SelectItem value="dev">dev</SelectItem>
+                      <SelectItem value="document">document</SelectItem>
+                      <SelectItem value="research">research</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-xs text-muted-foreground">Modelo padrão</span>
+                  <Select value={defaultModelPreference} onValueChange={setDefaultModelPreference}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">auto</SelectItem>
+                      <SelectItem value="openai">openai</SelectItem>
+                      <SelectItem value="gemini">gemini</SelectItem>
+                      <SelectItem value="mock">mock</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-xs text-muted-foreground">Política de memória</span>
+                  <Select value={memoryPolicy} onValueChange={setMemoryPolicy}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="strict">strict</SelectItem>
+                      <SelectItem value="balanced">balanced</SelectItem>
+                      <SelectItem value="adaptive">adaptive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </label>
+
+                <div className="space-y-3 rounded-xl border border-border/60 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium">Permitir exportações</div>
+                      <div className="text-xs text-muted-foreground">Controla exportação de dados e artifacts.</div>
+                    </div>
+                    <Switch checked={allowExports} onCheckedChange={setAllowExports} />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium">Compartilhamento público</div>
+                      <div className="text-xs text-muted-foreground">Mantém links públicos desativados por padrão.</div>
+                    </div>
+                    <Switch checked={allowPublicSharing} onCheckedChange={setAllowPublicSharing} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-end">
+                <Button onClick={onSaveWorkspace}>
+                  <Save className="size-4 mr-1" />
+                  Salvar workspace
+                </Button>
+              </div>
+            </GlassCard>
+
+            <GlassCard hoverable={false}>
+              <div className="flex items-center gap-2">
+                <Globe2 className="size-4 text-[var(--orbe-blue)]" />
+                <div className="font-semibold">Identidade</div>
+              </div>
+
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">slug</span>
+                  <span className="font-mono text-xs">{workspace?.slug ?? "—"}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">id</span>
+                  <span className="font-mono text-xs truncate max-w-[180px]">{workspace?.id ?? "—"}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">locale</span>
+                  <span>{workspace?.settings.locale ?? "pt-BR"}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">atualizado</span>
+                  <span>{workspace ? formatDate(workspace.updatedAt) : "—"}</span>
+                </div>
+              </div>
+            </GlassCard>
           </div>
         </TabsContent>
 
