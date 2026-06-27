@@ -88,3 +88,47 @@ Validar esta fundação no Codespaces. Depois disso, avançar para modelos reais
 8. `audit_logs`
 9. `model_runs`
 10. `api_keys`
+
+
+---
+
+## atualização: migration inicial
+
+Status atual da fase 1:
+
+- [x] API /health validada localmente
+- [x] API /v1/status validada localmente
+- [x] modelos iniciais registrados no SQLAlchemy
+- [x] testes Python passando
+- [~] migration inicial criada
+- [ ] migration validada em SQL offline
+- [ ] migration aplicada em Postgres real
+
+Tabelas cobertas pela primeira migration:
+
+- workspaces
+- projects
+- chats
+- messages
+- artifacts
+- artifact_versions
+- memories
+- model_providers
+- model_runs
+- audit_logs
+- integration_clients
+
+Observação técnica:
+
+- users, login, sessões e chaves reais de API ficam para a fase 3, autenticação e segurança.
+- A fase atual prioriza persistência de conversas, projetos, artifacts, memória, logs de modelo, auditoria e clientes de integração.
+- A migration foi escrita manualmente para não depender de banco local no Codespaces.
+- A validação imediata será feita com alembic upgrade head --sql, que gera o SQL sem conectar no Postgres.
+- A aplicação real da migration será testada em Postgres via Docker/Audaks.
+
+Próximo passo depois da validação:
+
+- criar endpoints reais de projects, chats e messages;
+- manter provider mock por enquanto;
+- só depois plugar modelo externo real.
+
