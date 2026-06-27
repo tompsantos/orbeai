@@ -714,3 +714,36 @@ Próximo passo técnico:
 - endurecer testes e isolamento de estado do banco;
 - depois consolidar documentação final da backend foundation.
 
+---
+
+## atualização: isolamento de estado nos testes
+
+A etapa atual endureceu a suíte de testes da backend foundation.
+
+Status implementado:
+
+- Novo backend/tests/conftest.py.
+- Os testes passam a resetar controles de runtime antes e depois de cada teste.
+- Workspace settings voltam automaticamente para defaults seguros.
+- Feature flags voltam automaticamente para o estado esperado.
+- Isso reduz vazamento de estado entre testes usando banco local persistente.
+- Foram adicionados testes específicos para validar defaults de runtime e mutação segura dentro de um teste.
+
+Defaults garantidos nos testes:
+
+- default_chat_mode=strategist.
+- default_model_preference=auto.
+- memory_policy=balanced.
+- allow_exports=true.
+- allow_public_sharing=false.
+- real_providers=true.
+- auto_memory=true.
+- memory_context=true.
+- audit_logs=true.
+- artifact_versions=true.
+
+Próximo passo técnico:
+
+- consolidar documentação final da backend foundation;
+- depois fazer revisão técnica fina antes do fechamento da fase 3.
+
