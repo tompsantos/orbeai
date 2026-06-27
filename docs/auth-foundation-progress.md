@@ -258,3 +258,46 @@ Observação:
 - A tela visual de login/cadastro fica para a etapa 4.8.
 - O dev auth bridge só deve ser usado em desenvolvimento local.
 
+
+---
+
+## nota operacional: frontend, auth e providers locais
+
+Durante a validação da tela de login/cadastro, o frontend retornou Not Found ao tentar entrar ou cadastrar.
+
+Diagnóstico encontrado:
+
+- O código local já expunha /v1/auth/login e /v1/auth/register no OpenAPI.
+- Porém curl http://localhost:8000/v1/auth/login retornava 404.
+- A porta 8000 estava presa por um container antigo com uvicorn desatualizado.
+- O backend local novo não estava de fato servindo a porta usada pelo frontend.
+
+Correção aplicada no ambiente local:
+
+- Identificar o processo/container usando a porta 8000.
+- Parar o container antigo.
+- Subir o backend local com o código atual.
+- Carregar o .env real.
+- Garantir ENABLE_REAL_PROVIDERS=true.
+
+Comando operacional recomendado para backend local com providers reais:
+
+    cd /workspaces/orbeai/backend
+    source .venv/bin/activate
+
+    set -a
+    source /workspaces/orbeai/.env
+    set +a
+
+    export DATABASE_URL=postgresql+psycopg://orbeai:orbeai@localhost:5433/orbeai
+    export ENABLE_REAL_PROVIDERS=true
+
+    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+Resultado validado:
+
+- /v1/auth/login e /v1/auth/register deixaram de retornar 404.
+- Login/cadastro funcionaram no frontend.
+- Providers reais voltaram a aparecer como ativos no cockpit.
+- OpenAI e Gemini subiram corretamente quando o backend foi iniciado com ENABLE_REAL_PROVIDERS=true.
+
