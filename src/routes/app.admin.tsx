@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { adminService } from "@/lib/api";
 import { localStore } from "@/lib/storage/localStore";
-import type { AuditLog, FeatureFlag, UsageMetric, WorkspaceInfo } from "@/types";
+import type { AuditLog, FeatureFlag, UsageMetric, WorkspaceInfo, WorkspaceMember, WorkspaceMemberAccess } from "@/types";
 import {
   Activity,
   AlertTriangle,
@@ -24,6 +24,7 @@ import {
   Route as RouteIcon,
   ShieldCheck,
   Trash2,
+  Users,
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -69,11 +70,39 @@ function actionTone(log: AuditLog): "success" | "warn" | "danger" | "muted" | "b
   return "muted";
 }
 
+function roleTone(role: string): "success" | "warn" | "danger" | "muted" | "blue" {
+  if (role === "owner") return "success";
+  if (role === "admin") return "blue";
+  if (role === "member") return "muted";
+  if (role === "viewer") return "warn";
+
+  return "muted";
+}
+
+function memberStatusTone(status: string): "success" | "warn" | "danger" | "muted" | "blue" {
+  if (status === "active") return "success";
+  if (status === "inactive") return "warn";
+  if (status === "suspended") return "danger";
+
+  return "muted";
+}
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "U";
+}
+
 function AdminPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [usage, setUsage] = useState<UsageMetric[]>([]);
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [workspace, setWorkspace] = useState<WorkspaceInfo | null>(null);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [access, setAccess] = useState<WorkspaceMemberAccess | null>(null);
   const [workspaceName, setWorkspaceName] = useState("");
   const [workspacePlan, setWorkspacePlan] = useState("");
   const [workspaceTimezone, setWorkspaceTimezone] = useState("America/Sao_Paulo");
@@ -92,17 +121,23 @@ function AdminPage() {
     setLoading(true);
 
     try {
-      const [a, u, f, w] = await Promise.all([
+      const [a, u, f, w, currentAccess] = await Promise.all([
         adminService.audit({ q: q || undefined, level: level === "todos" ? undefined : level }),
         adminService.usage(),
         adminService.flags(),
         adminService.workspace(),
+        adminService.workspaceAccess(),
       ]);
+
+      const canReadMembers = currentAccess.permissions.includes("members.read");
+      const workspaceMembers = canReadMembers ? await adminService.workspaceMembers() : [];
 
       setLogs(a);
       setUsage(u);
       setFlags(f);
       setWorkspace(w);
+      setAccess(currentAccess);
+      setMembers(workspaceMembers);
       setWorkspaceName(w.name);
       setWorkspacePlan(w.plan);
       setWorkspaceTimezone(w.settings.timezone);
@@ -164,6 +199,14 @@ function AdminPage() {
 
     return Array.from(buckets.entries()).map(([provider, data]) => ({ provider, ...data }));
   }, [usage]);
+
+  const memberStats = useMemo(() => {
+    return {
+      total: members.length,
+      active: members.filter((member) => member.status === "active").length,
+      owners: members.filter((member) => member.role === "owner").length,
+    };
+  }, [members]);
 
   async function onToggleFlag(key: string) {
     await adminService.toggleFlag(key);
@@ -243,6 +286,7 @@ function AdminPage() {
           <TabsTrigger value="usage">Uso de modelos</TabsTrigger>
           <TabsTrigger value="events">Eventos</TabsTrigger>
           <TabsTrigger value="flags">Feature flags</TabsTrigger>
+          <TabsTrigger value="members">Membros</TabsTrigger>
           <TabsTrigger value="workspace">Workspace</TabsTrigger>
           <TabsTrigger value="health">Saúde do sistema</TabsTrigger>
         </TabsList>
@@ -380,6 +424,107 @@ function AdminPage() {
                 </div>
               </GlassCard>
             ))}
+          </div>
+        </TabsContent>
+
+
+        <TabsContent value="members" className="mt-5 space-y-3">
+          <div className="grid lg:grid-cols-[1fr_320px] gap-3">
+            <GlassCard hoverable={false}>
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <Users className="size-4 text-[var(--orbe-blue)]" />
+                  <div>
+                    <div className="font-semibold">Membros do workspace</div>
+                    <div className="text-xs text-muted-foreground">Usuários, roles e status vindos do backend real.</div>
+                  </div>
+                </div>
+                <Pill tone="blue">{memberStats.total} membros</Pill>
+              </div>
+
+              {members.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border/70 p-4 text-sm text-muted-foreground">
+                  Nenhum membro disponível para exibir, ou seu acesso não possui members.read.
+                </div>
+              ) : (
+                <ul className="divide-y divide-border/60">
+                  {members.map((member) => (
+                    <li key={member.id} className="py-3 first:pt-0 last:pb-0">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted/60 text-sm font-semibold">
+                          {initials(member.userName)}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium truncate">{member.userName}</span>
+                            <Pill tone={roleTone(member.role)}>{member.role}</Pill>
+                            <Pill tone={memberStatusTone(member.status)}>{member.status}</Pill>
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground break-all">
+                            {member.userEmail}
+                          </div>
+                          <div className="mt-1 text-[11px] text-muted-foreground font-mono truncate">
+                            {member.id}
+                          </div>
+                        </div>
+
+                        <div className="hidden sm:block text-right text-xs text-muted-foreground">
+                          <div>criado em</div>
+                          <div className="tabular-nums">{formatDate(member.createdAt)}</div>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </GlassCard>
+
+            <div className="space-y-3">
+              <GlassCard hoverable={false}>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="size-4 text-[var(--orbe-blue)]" />
+                  <div className="font-semibold">Meu acesso</div>
+                </div>
+
+                <div className="mt-4 space-y-3 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">role</span>
+                    <Pill tone={roleTone(access?.role ?? "viewer")}>{access?.role ?? "—"}</Pill>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">status</span>
+                    <Pill tone={memberStatusTone(access?.status ?? "inactive")}>{access?.status ?? "—"}</Pill>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">permissões</span>
+                    <span className="font-mono text-xs">{access?.permissions.length ?? 0}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">member id</span>
+                    <span className="font-mono text-xs truncate max-w-[170px]">{access?.memberId ?? "—"}</span>
+                  </div>
+                </div>
+              </GlassCard>
+
+              <GlassCard hoverable={false}>
+                <div className="font-semibold">Resumo</div>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="orbe-surface p-2">
+                    <div className="text-lg font-semibold tabular-nums">{memberStats.total}</div>
+                    <div className="text-muted-foreground">total</div>
+                  </div>
+                  <div className="orbe-surface p-2">
+                    <div className="text-lg font-semibold tabular-nums">{memberStats.active}</div>
+                    <div className="text-muted-foreground">ativos</div>
+                  </div>
+                  <div className="orbe-surface p-2">
+                    <div className="text-lg font-semibold tabular-nums">{memberStats.owners}</div>
+                    <div className="text-muted-foreground">owners</div>
+                  </div>
+                </div>
+              </GlassCard>
+            </div>
           </div>
         </TabsContent>
 

@@ -9,7 +9,7 @@ Branch: feature/workspace-access-foundation
 - [x] 5.2 criar dependency de permissão no backend
 - [x] 5.3 aplicar permissões em rotas sensíveis
 - [x] 5.4 criar endpoints de membros do workspace
-- [ ] 5.5 criar tela/admin de membros
+- [x] 5.5 criar tela/admin de membros
 - [ ] 5.6 permitir alteração de role/status
 - [ ] 5.7 proteger ações destrutivas
 - [ ] 5.8 testes de isolamento e autorização
@@ -203,5 +203,39 @@ Comportamento implementado:
 Observação:
 
 - Esta etapa é apenas leitura.
+- Alteração de role/status fica para a etapa 5.6.
+
+
+---
+
+## atualização: tela admin de membros
+
+A etapa 5.5 conectou os endpoints de membros ao frontend administrativo.
+
+Arquivos alterados:
+
+- src/types/index.ts
+- src/lib/api/services/adminService.ts
+- src/routes/app.admin.tsx
+
+Comportamento implementado:
+
+- O adminService agora consome GET /v1/workspace/members/me/access.
+- O adminService agora consome GET /v1/workspace/members.
+- A tela Admin ganhou aba Membros.
+- A aba Membros exibe nome, e-mail, role, status e id da membership.
+- A aba Membros exibe o acesso atual do usuário logado.
+- A tela mostra resumo com total de membros, ativos e owners.
+- A listagem só é carregada quando o acesso atual possui members.read.
+
+Validação manual:
+
+- A aba Membros abriu corretamente no frontend.
+- O acesso owner foi exibido.
+- O banco local mostrou muitos membros porque os testes criaram usuários fake no ambiente de desenvolvimento.
+
+Observação:
+
+- Esta etapa é apenas visualização.
 - Alteração de role/status fica para a etapa 5.6.
 

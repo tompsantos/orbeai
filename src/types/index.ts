@@ -319,3 +319,24 @@ export interface WorkspaceInfo {
   settings: WorkspaceSettings;
 }
 
+export interface WorkspaceMember {
+  id: ID;
+  workspaceId: ID;
+  userId: ID;
+  userEmail: string;
+  userName: string;
+  userStatus: string;
+  role: UserRole;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkspaceMemberAccess {
+  workspaceId: ID;
+  memberId: ID;
+  userId: ID;
+  role: UserRole;
+  status: string;
+  permissions: string[];
+}

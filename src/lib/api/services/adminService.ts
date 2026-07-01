@@ -1,7 +1,7 @@
 import { apiClient } from "@/lib/api/client";
 import { localStore, STORAGE_KEYS } from "@/lib/storage/localStore";
 import { mockAudit, mockFlags, mockUsage } from "@/lib/mock/data";
-import type { AuditLog, FeatureFlag, ProviderSlug, UsageMetric, WorkspaceInfo, WorkspaceSettings } from "@/types";
+import type { AuditLog, FeatureFlag, ProviderSlug, UsageMetric, WorkspaceInfo, WorkspaceMember, WorkspaceMemberAccess, WorkspaceSettings } from "@/types";
 
 interface BackendModelRun {
   id: string;
@@ -74,6 +74,28 @@ interface BackendWorkspace {
   settings: BackendWorkspaceSettings;
 }
 
+interface BackendWorkspaceMember {
+  id: string;
+  workspace_id: string;
+  user_id: string;
+  user_email: string;
+  user_name: string;
+  user_status: string;
+  role: WorkspaceMember["role"];
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface BackendWorkspaceMemberAccess {
+  workspace_id: string;
+  member_id: string;
+  user_id: string;
+  role: WorkspaceMemberAccess["role"];
+  status: string;
+  permissions: string[];
+}
+
 function toProviderSlug(value: string | null | undefined): ProviderSlug {
   if (value === "openai") return "openai";
   if (value === "anthropic") return "anthropic";
@@ -129,6 +151,32 @@ function toWorkspaceInfo(workspace: BackendWorkspace): WorkspaceInfo {
     createdAt: workspace.created_at,
     updatedAt: workspace.updated_at,
     settings: toWorkspaceSettings(workspace.settings),
+  };
+}
+
+function toWorkspaceMember(member: BackendWorkspaceMember): WorkspaceMember {
+  return {
+    id: member.id,
+    workspaceId: member.workspace_id,
+    userId: member.user_id,
+    userEmail: member.user_email,
+    userName: member.user_name,
+    userStatus: member.user_status,
+    role: member.role,
+    status: member.status,
+    createdAt: member.created_at,
+    updatedAt: member.updated_at,
+  };
+}
+
+function toWorkspaceMemberAccess(access: BackendWorkspaceMemberAccess): WorkspaceMemberAccess {
+  return {
+    workspaceId: access.workspace_id,
+    memberId: access.member_id,
+    userId: access.user_id,
+    role: access.role,
+    status: access.status,
+    permissions: access.permissions,
   };
 }
 
@@ -293,6 +341,57 @@ export const adminService = {
         updatedAt: now,
       },
     };
+  },
+
+  async workspaceAccess(): Promise<WorkspaceMemberAccess> {
+    if (!apiClient.isMock) {
+      const access = await apiClient.request<BackendWorkspaceMemberAccess>("/v1/workspace/members/me/access");
+      return toWorkspaceMemberAccess(access);
+    }
+
+    return {
+      workspaceId: "ws_mock",
+      memberId: "wm_mock_owner",
+      userId: "usr_mock_owner",
+      role: "owner",
+      status: "active",
+      permissions: [
+        "workspace.read",
+        "workspace.update",
+        "workspace.settings.read",
+        "workspace.settings.update",
+        "members.read",
+        "members.update_role",
+        "members.deactivate",
+        "feature_flags.read",
+        "feature_flags.update",
+        "audit.read",
+      ],
+    };
+  },
+
+  async workspaceMembers(): Promise<WorkspaceMember[]> {
+    if (!apiClient.isMock) {
+      const members = await apiClient.request<BackendWorkspaceMember[]>("/v1/workspace/members");
+      return members.map(toWorkspaceMember);
+    }
+
+    const now = new Date().toISOString();
+
+    return [
+      {
+        id: "wm_mock_owner",
+        workspaceId: "ws_mock",
+        userId: "usr_mock_owner",
+        userEmail: "tom@orbeone.dev",
+        userName: "Tom",
+        userStatus: "active",
+        role: "owner",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ];
   },
 
   async updateWorkspace(payload: Partial<Pick<WorkspaceInfo, "name" | "plan">>): Promise<WorkspaceInfo> {
